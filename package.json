@@ -1,0 +1,23 @@
+{
+  "name": "npe_gerber",
+  "version": "1.0.0",
+  "description": "Create a PCB image from gerber files",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nplayfair/npe_gerber.git"
+  },
+  "author": "nplayfair",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nplayfair/npe_gerber/issues"
+  },
+  "homepage": "https://github.com/nplayfair/npe_gerber#readme",
+  "dependencies": {
+    "node-stream-zip": "^1.12.0",
+    "pcb-stackup": "^4.2.5"
+  }
+}
