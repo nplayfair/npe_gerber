@@ -8,14 +8,7 @@ const density = 1000;
 const compLevel = 1;
 const destfile = './gerber/pcb3.png';
 
-async function writeSVG(filepath, data) {
-  try {
-    await fs.promises.writeFile(filepath, data, { flag: 'w' });
-  } catch (e) {
-    console.error(`Error writing file: ${e.message}`);
-  }
-}
-
+//Sample gerber
 const fileNames = [
   './gerber/default/copper_top.gbr',
   './gerber/default/drill_1_16.xln',
