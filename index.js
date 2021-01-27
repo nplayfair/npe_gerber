@@ -20,7 +20,7 @@ const sampleNames = [
   './gerber/default/profile.gbr',
 ]
 
-const layers = sampleNames.map(filename => ({
+const samplelayers = sampleNames.map(filename => ({
   filename,
   gerber: fs.createReadStream(filename),
 }));
@@ -60,4 +60,26 @@ const layers = sampleNames.map(filename => ({
 //     console.log('done');
 //   })
 
-fileProc.getLayers('./gerber/sho_v2.zip')
+// const templayers = fileProc.getLayers('./gerber/sho_v2.zip')
+// console.log(templayers)
+
+fileProc.getLayers('./gerber/Timmy.zip')
+  .then(layers => {
+    pcbStackup(layers).then(stackup => {
+      // Create buffer from SVG string
+      sharp(Buffer.from(stackup.top.svg), { density: density })
+      .resize({ width: resizeWidth })
+      .png({ 
+        compressionLevel: compLevel })
+      .toFile(destfile)
+      .then((info) => {
+        console.log(info)
+      })
+      .catch((e) => {
+        console.error(e);
+      })
+    })
+    .catch((e) => {
+      console.error(e);
+    });
+  })

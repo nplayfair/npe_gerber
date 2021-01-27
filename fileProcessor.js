@@ -73,23 +73,26 @@ async function getLayers2(fileName) {
 }
 
 async function getLayers(fileName) {
-  try {
+  return new Promise((resolve, reject) => {
     const tempDir = path.join(__dirname, 'gerber', 'tmp', 'archive');
     extractArchive(fileName)
       .then(numfiles => {
-        // const layers = gerberFiles.map(fileName => ({
-        //   filename: fileName,
-        //   gerber: fs.createReadStream(path.join(tempDir, fileName))
-        // }));
-        // console.log(layers);
         console.log(`${numfiles} files extracted successfully`);
+        const layers = gerberFiles.map(fileName => ({
+          filename: fileName,
+          gerber: fs.createReadStream(path.join(tempDir, fileName))
+        }));
+        if(numfiles > 0) {
+          // Some files were extracted
+          resolve(layers);
+        } else {
+          reject();
+        }
       })
       .catch(e => {
         console.log(e);
       })
-  } catch (err) {
-    console.error(err);
-  }
+  })
 }
 
 function extractArchive(fileName) {
