@@ -12,89 +12,11 @@ const gerberFiles = [
   'CAMOutputs/GerberFiles/profile.gbr'
 ]
 
-let newLayers = [];
-
-// Use a sample zip archive
-
-const zip =  new StreamZip({
-  file: './gerber/sho_v2.zip',
-  storeEntries: true
-});
-
-function countFiles() {
-  // Read the zip file
-  zip.on('ready', () => {
-    console.log('Entries read: ' + zip.entriesCount);
-    for (const entry of Object.values(zip.entries())) {
-      const desc = entry.isDirectory ? 'directory' : `${entry.size} bytes`;
-      console.log(`Entry ${entry.name}: ${desc}`);
-    }
-    zip.close()
-  });
-}
-
-function getFiles() {
-  // Get the gerber files from the zip archive
-  zip.on('ready', () => {
-    let fileName = 'CAMOutputs/GerberFiles/silkscreen_top.gbr';
-    zip.stream(fileName, (err, stm) => {
-      newLayers.push({
-        filename: fileName,
-        gerber: stm
-      });
-      stm.on('end', () => zip.close());
-      console.log(newLayers);
-    });
-  });
-}
-
-async function getLayers2(fileName) {
-  const tempDir = path.join(__dirname, 'gerber', 'tmp', 'archive');
-  const archive =  new StreamZip({
-    file: fileName,
-    storeEntries: true
-  });
-  try {
-    archive.on('ready', () => {
-      fs.mkdirSync(tempDir, { recursive: true });
-      archive.extract(null, tempDir, (err, count) => {
-        console.log(err ? 'Extract error' : `Extracted ${count} entries`);
-        const layers = gerberFiles.map(fileName => ({
-          filename: fileName,
-          gerber: fs.createReadStream(path.join(tempDir, fileName))
-        }));
-        archive.close();
-        return layers;
-      });
-    });
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-async function getLayers(fileName) {
-  return new Promise((resolve, reject) => {
-    const tempDir = path.join(__dirname, 'gerber', 'tmp', 'archive');
-    extractArchive(fileName)
-      .then(numfiles => {
-        console.log(`${numfiles} files extracted successfully`);
-        const layers = gerberFiles.map(fileName => ({
-          filename: fileName,
-          gerber: fs.createReadStream(path.join(tempDir, fileName))
-        }));
-        if(numfiles > 0) {
-          // Some files were extracted
-          resolve(layers);
-        } else {
-          reject();
-        }
-      })
-      .catch(e => {
-        console.log(e);
-      })
-  })
-}
-
+/**
+ * Extracts the passed in zip file
+ * @param {string} fileName
+ * @returns {Promise} Promise object represents number of files extracted
+ */
 function extractArchive(fileName) {
   // Configure archive to use
   const archive =  new StreamZip({
@@ -121,13 +43,27 @@ function extractArchive(fileName) {
   })
 }
 
-// Helper methods
-function validFiles(file) {
-  return gerberFiles.includes(file);
-}
-
-function layerBuild(filename) {
-  fs.createReadStream(filename);
+async function getLayers(fileName) {
+  return new Promise((resolve, reject) => {
+    const tempDir = path.join(__dirname, 'gerber', 'tmp', 'archive');
+    extractArchive(fileName)
+      .then(numfiles => {
+        console.log(`${numfiles} files extracted successfully`);
+        const layers = gerberFiles.map(fileName => ({
+          filename: fileName,
+          gerber: fs.createReadStream(path.join(tempDir, fileName))
+        }));
+        if(numfiles > 0) {
+          // Some files were extracted
+          resolve(layers);
+        } else {
+          reject();
+        }
+      })
+      .catch(e => {
+        console.log(e);
+      })
+  })
 }
 
 async function cleanupFiles() {
@@ -140,20 +76,8 @@ async function cleanupFiles() {
   }
 }
 
-function getStream(fileName) {
-  let stream;
-  zip.on('ready', () => {
-    stream = zip.entryDataSync(fileName);
-      zip.close();
-  console.log(stream);
-  })
+module.exports = {
+  extractArchive,
+  getLayers,
+  cleanupFiles
 }
-
-
-// We want to return an array of layers
-
-
-exports.countFiles = countFiles;
-exports.extractArchive = extractArchive;
-exports.cleanupFiles = cleanupFiles;
-exports.getLayers = getLayers;

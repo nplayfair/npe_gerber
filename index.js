@@ -1,85 +1,46 @@
-const fs          = require('fs');
-const { file } = require('jszip');
 const pcbStackup  = require('pcb-stackup');
 const sharp       = require('sharp');
+const path        = require('path');
 const fileProc    = require('./fileProcessor.js');
 
 // Configuration
-const resizeWidth = 600;
-const density = 1000;
-const compLevel = 1;
-const destfile = './gerber/pcb3.png';
+const config = {
+  resizeWidth: 600,
+  density: 1000,
+  compLevel: 1,
+}
 
-//Sample gerber
-const sampleNames = [
-  './gerber/default/copper_top.gbr',
-  './gerber/default/drill_1_16.xln',
-  './gerber/default/silkscreen_top.gbr',
-  './gerber/default/soldermask_top.gbr',
-  './gerber/default/solderpaste_top.gbr',
-  './gerber/default/profile.gbr',
-]
-
-const samplelayers = sampleNames.map(filename => ({
-  filename,
-  gerber: fs.createReadStream(filename),
-}));
-
-// pcbStackup(layers).then(stackup => {
-//   // Create buffer from SVG string
-//   sharp(Buffer.from(stackup.top.svg), { density: density })
-//   .resize({ width: resizeWidth })
-//   .png({ 
-//     compressionLevel: compLevel })
-//   .toFile(destfile)
-//   .then((info) => {
-//     console.log(info)
-//   })
-//   .catch((e) => {
-//     console.error(e);
-//   })
-// })
-// .catch((e) => {
-//   console.error(e);
-// });
-
-// fileProc.jsTest();
-// console.log(layers);
-
-// fileProc.getLayers();
-// fileProc.getStream('CAMOutputs/GerberFiles/silkscreen_top.gbr');
-// fileProc.extractArchive('./gerber/sho_v2.zip')
-// fileProc.cleanupFiles();
-
-// async () => {
-//   const templayers = await fileProc.getLayers('./gerber/sho_v2.zip');
-//   console.log(templayers);
-// }
-// fileProc.extractArchive('./gerber/sho_v2.zip')
-//   .then(msg => {
-//     console.log('done');
-//   })
-
-// const templayers = fileProc.getLayers('./gerber/sho_v2.zip')
-// console.log(templayers)
-
-fileProc.getLayers('./gerber/Timmy.zip')
-  .then(layers => {
-    pcbStackup(layers).then(stackup => {
-      // Create buffer from SVG string
-      sharp(Buffer.from(stackup.top.svg), { density: density })
-      .resize({ width: resizeWidth })
-      .png({ 
-        compressionLevel: compLevel })
-      .toFile(destfile)
-      .then((info) => {
-        console.log(info)
-      })
+// Functions
+function gerberToImage(gerber, imageName) {
+  return new Promise((resolve, reject) => {
+    const destFile = path.join(__dirname, 'gerber', 'pcb', imageName);
+    fileProc.getLayers(gerber)
+      .then(layers => {
+        pcbStackup(layers).then(stackup => {
+          // Create buffer from SVG string
+          sharp(Buffer.from(stackup.top.svg), { density: config.density })
+          .resize({ width: config.resizeWidth })
+          .png({ 
+            compressionLevel: config.compLevel })
+          .toFile(destFile)
+          .then((info) => {
+            // Succesful
+            fileProc.cleanupFiles();
+            resolve(info);
+          })
+          .catch((e) => {
+            fileProc.cleanupFiles();
+            reject(e);
+          })
+        })
       .catch((e) => {
-        console.error(e);
-      })
+        reject(e);
+      });
     })
-    .catch((e) => {
-      console.error(e);
-    });
+  })
+}
+
+gerberToImage('./gerber/Timmy.zip', 'timmy.png').then(info => console.log(info))
+  .catch(e => {
+    console.error(e);
   })
