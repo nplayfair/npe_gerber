@@ -17,7 +17,7 @@ const gerberFiles = [
  * @param {string} fileName
  * @returns {Promise} Promise object represents number of files extracted
  */
-function extractArchive(fileName) {
+async function extractArchive(fileName) {
   // Configure archive to use
   const archive =  new StreamZip({
     file: fileName,
@@ -57,7 +57,8 @@ async function getLayers(fileName) {
           // Some files were extracted
           resolve(layers);
         } else {
-          reject();
+          const errMsg = 'No files were extracted';
+          reject(errMsg);
         }
       })
       .catch(e => {
@@ -66,10 +67,10 @@ async function getLayers(fileName) {
   })
 }
 
-async function cleanupFiles() {
+function cleanupFiles() {
   try {
     let folder = path.join(__dirname, 'gerber', 'tmp');
-    await fs.emptyDirSync(folder);
+    fs.emptyDirSync(folder);
     console.log('Temp files removed.');
   } catch (err) {
     console.error(err);

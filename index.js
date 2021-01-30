@@ -11,7 +11,7 @@ const config = {
 }
 
 // Functions
-function gerberToImage(gerber, imageName) {
+async function gerberToImage(gerber, imageName) {
   return new Promise((resolve, reject) => {
     const destFile = path.join(__dirname, 'gerber', 'pcb', imageName);
     fileProc.getLayers(gerber)
