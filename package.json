@@ -1,5 +1,5 @@
 {
-  "name": "npe_gerber",
+  "name": "@nplayfair/npe_gerber",
   "version": "1.0.0",
   "description": "Create a PCB image from gerber files",
   "main": "index.js",
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/nplayfair/npe_gerber.git"
   },
   "author": "nplayfair",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/nplayfair/npe_gerber/issues"
   },
