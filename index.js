@@ -1,7 +1,7 @@
 const StreamZip = require('node-stream-zip');
 const fs = require('fs-extra');
 const path = require('path');
-const pcbStackup  = require('pcb-stackup');
+const pcbStackup = require('pcb-stackup');
 const sharp = require('sharp');
 
 // Filenames we need to extract from the archive
@@ -11,8 +11,8 @@ const gerberFiles = [
   'CAMOutputs/GerberFiles/silkscreen_top.gbr',
   'CAMOutputs/GerberFiles/soldermask_top.gbr',
   'CAMOutputs/GerberFiles/solderpaste_top.gbr',
-  'CAMOutputs/GerberFiles/profile.gbr'
-]
+  'CAMOutputs/GerberFiles/profile.gbr',
+];
 
 /**
  * Configures the folders used
@@ -45,28 +45,28 @@ function handleError(e) {
  */
 function extractArchive(fileName, tmpDir) {
   // Configure archive to use
-  const archive =  new StreamZip({
+  const archive = new StreamZip({
     file: fileName,
-    storeEntries: true
+    storeEntries: true,
   });
   return new Promise((resolve, reject) => {
     // Try to extract
     archive.on('ready', () => {
-      let extDir = path.join(tmpDir, 'archive');
+      const extDir = path.join(tmpDir, 'archive');
       fs.mkdirSync(extDir, { recursive: true });
       archive.extract(null, extDir, (err, count) => {
-        if(!err) {
+        if (!err) {
           archive.close();
           resolve(count);
         } else {
           const errMsg = 'Error extracting archive';
           console.err(errMsg);
           archive.close();
-          reject(errMsg)
+          reject(errMsg);
         }
-      })
-    })
-  })
+      });
+    });
+  });
 }
 
 /**
@@ -79,13 +79,13 @@ function getLayers(fileName, tmpDir) {
   return new Promise((resolve, reject) => {
     const extractDir = path.join(tmpDir, 'archive');
     extractArchive(fileName, tmpDir)
-      .then(numfiles => {
+      .then((numfiles) => {
         console.log(`${numfiles} files extracted successfully`);
-        const layers = gerberFiles.map(fileName => ({
-          filename: fileName,
-          gerber: fs.createReadStream(path.join(extractDir, fileName))
+        const layers = gerberFiles.map((layerName) => ({
+          filename: layerName,
+          gerber: fs.createReadStream(path.join(extractDir, layerName)),
         }));
-        if(numfiles > 0) {
+        if (numfiles > 0) {
           // Some files were extracted
           resolve(layers);
         } else {
@@ -93,10 +93,10 @@ function getLayers(fileName, tmpDir) {
           reject(errMsg);
         }
       })
-      .catch(e => {
+      .catch((e) => {
         console.log(e);
-      })
-  })
+      });
+  });
 }
 
 /**
@@ -105,7 +105,7 @@ function getLayers(fileName, tmpDir) {
  */
 function cleanupFiles(dir) {
   try {
-    let folder = path.join(dir, 'archive');
+    const folder = path.join(dir, 'archive');
     fs.emptyDirSync(folder);
     console.log('Temp files removed.');
   } catch (err) {
@@ -114,49 +114,47 @@ function cleanupFiles(dir) {
 }
 
 /**
- * Take an archive containing gerber files, config object, temporary dir 
+ * Take an archive containing gerber files, config object, temporary dir
  * and output dir and create a PNG image from the gerber in the output dir
  * @param {string} gerber Path to an archive file containing gerber
  * @param {Object} config Object containing sharp settings for resizeWidth, compLevel and density
  * @param {string} tmpDir Temporary directory to extract the archive to
  * @param {string} outputDir Directory to save the image to
  */
-function gerberToImage(gerber, config, tmpDir, outputDir) {
+function gerberToImage(gerber, imgConfig, tmpDir, outputDir) {
   // Set filenames
   const imageName = path.basename(gerber, '.zip');
-  const destFile = path.join(outputDir, imageName) + '.png';
+  const destFile = `${path.join(outputDir, imageName)}.png`;
 
   // Make sure output dir exists
   try {
     fs.ensureDirSync(outputDir);
-  } 
-  catch (e) {
-    console.error(e)
+  } catch (e) {
+    console.error(e);
   }
 
   return new Promise((resolve, reject) => {
     getLayers(gerber, tmpDir)
       .then(pcbStackup)
-      .then(stackup => {
-        sharp(Buffer.from(stackup.top.svg), { density: config.density })
-        .resize({ width: config.resizeWidth })
-        .png({ 
-          compressionLevel: config.compLevel })
-        .toFile(destFile)
+      .then((stackup) => {
+        sharp(Buffer.from(stackup.top.svg), { density: imgConfig.density })
+          .resize({ width: imgConfig.resizeWidth })
+          .png({ compressionLevel: imgConfig.compLevel })
+          .toFile(destFile);
       })
       .then(() => {
         cleanupFiles(tmpDir);
         resolve(destFile);
       })
       .catch((e) => {
-        cleanupFiles(tmpDir)
+        cleanupFiles(tmpDir);
         handleError(e);
         reject(e);
-      })
+      });
   });
 }
 
 module.exports = {
   config,
-  gerberToImage
-}
+  gerberToImage,
+};
