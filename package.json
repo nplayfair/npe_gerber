@@ -16,6 +16,11 @@
     "url": "https://github.com/nplayfair/npe_gerber/issues"
   },
   "homepage": "https://github.com/nplayfair/npe_gerber#readme",
+  "keywords": [
+    "pcb",
+    "image",
+    "gerber"
+  ],
   "dependencies": {
     "fs-extra": "^9.1.0",
     "jszip": "^3.5.0",
