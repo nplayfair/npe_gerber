@@ -44,28 +44,39 @@ function handleError(e) {
  * @returns {Promise} Promise object represents number of files extracted
  */
 function extractArchive(fileName, tmpDir) {
-  // Configure archive to use
-  const archive = new StreamZip({
-    file: fileName,
-    storeEntries: true,
-  });
   return new Promise((resolve, reject) => {
-    // Try to extract
+    // Check archive exists
+    try {
+      if (!fs.existsSync(fileName)) {
+        return reject(new Error('Archive does not exist.'));
+      }
+      if (!fs.existsSync(tmpDir)) {
+        return reject(new Error('Temporary folder does not exist.'));
+      }
+    } catch (e) {
+      throw new Error(e);
+    }
+    // Configure archive to use
+    const archive = new StreamZip({
+      file: fileName,
+      storeEntries: true,
+    });
+    // Handle errors
+    archive.on('error', (err) =>
+      reject(new Error(`Error extracting archive: ${err}`))
+    );
+    // Extract
     archive.on('ready', () => {
       const extDir = path.join(tmpDir, 'archive');
       fs.mkdirSync(extDir, { recursive: true });
       archive.extract(null, extDir, (err, count) => {
-        if (!err) {
-          archive.close();
-          resolve(count);
-        } else {
-          const errMsg = 'Error extracting archive';
-          console.err(errMsg);
-          archive.close();
-          reject(errMsg);
-        }
+        if (err) throw new Error(err);
+        archive.close();
+        console.log('Extraction complete');
+        return resolve(count);
       });
     });
+    return true;
   });
 }
 
