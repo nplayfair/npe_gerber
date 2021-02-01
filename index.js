@@ -99,6 +99,27 @@ function getLayers(fileName, tmpDir) {
   });
 }
 
+function getLayers2(dir) {
+  return new Promise((resolve, reject) => {
+    // Make sure the directory exists
+    if (!fs.existsSync(dir)) {
+      return reject(new Error('Layers folder does not exist.'));
+    }
+    // Check that the required layer files exist in source dir
+    let layersValid = true;
+    gerberFiles.forEach((layer) => {
+      if (!fs.existsSync(path.join(dir, layer))) layersValid = false;
+    });
+    if (!layersValid) return reject(new Error('Layer not found.'));
+    // Construct array of layers that match the supplied filenames array
+    const layers = gerberFiles.map((layerName) => ({
+      filename: layerName,
+      gerber: fs.createReadStream(path.join(dir, layerName)),
+    }));
+    return resolve(layers);
+  });
+}
+
 /**
  * Clean up the archive folder in the specified directory
  * @param {string} dir Path to a directory to clean up

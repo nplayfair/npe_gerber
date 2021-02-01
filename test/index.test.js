@@ -6,6 +6,7 @@ const fileProc = require('../index.js');
 const testGerber = path.join(__dirname, 'Arduino-Pro-Mini.zip');
 const testLayers = path.join(__dirname, 'layers');
 const emptyFolder = path.join(__dirname, 'layers', 'Empty');
+const tmpDir = path.join(__dirname, 'tmp');
 
 // getLayers
 test('Promise of an array of layers from a given folder', () => {
@@ -22,9 +23,9 @@ test('Promise of an array of layers from a given folder', () => {
 });
 
 test('Non-existent folder should reject promise with error', () => {
-  return expect(fileProc.getLayers2('./invalid_folder')).rejects.toThrow('Layers folder does not exist');
+  return expect(fileProc.getLayers2('./invalid_folder')).rejects.toThrow('Layers folder does not exist.');
 });
 
 test('Folder with incorrect number of layers should reject promise with error', () => {
-  return expect(fileProc.getLayers2(emptyFolder)).rejects.toThrow('Layer not found');
+  return expect(fileProc.getLayers2(emptyFolder)).rejects.toThrow('Layer not found.');
 });
