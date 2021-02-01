@@ -187,6 +187,10 @@ function gerberToImage(gerber, imgConfig, tmpDir, outputDir) {
 }
 
 module.exports = {
+  cleanupFiles,
+  getLayers,
+  getLayers2,
+  extractArchive,
   config,
   gerberToImage,
 };
