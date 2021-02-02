@@ -82,9 +82,8 @@ function cleanupFiles(dir) {
   try {
     const folder = path.join(dir, 'archive');
     fs.emptyDirSync(folder);
-    console.log('Temp files removed.');
   } catch (err) {
-    console.error(err);
+    throw new Error(err);
   }
 }
 
@@ -97,16 +96,31 @@ function cleanupFiles(dir) {
  * @param {string} outputDir Directory to save the image to
  */
 function gerberToImage(gerber, imgConfig, tmpDir, outputDir) {
+  // Create output dir if it doesn't exist
+  try {
+    fs.ensureDirSync(outputDir, 0o644);
+  } catch (e) {
+    throw new Error(e);
+  }
+
+  // Check temp and output dirs exist
+  try {
+    if (!fs.existsSync(gerber)) {
+      throw Error('Archive does not exist.');
+    }
+    if (!fs.existsSync(tmpDir)) {
+      throw Error('Temporary folder does not exist.');
+    }
+    if (!fs.existsSync(outputDir)) {
+      throw Error('Output folder does not exist.');
+    }
+  } catch (e) {
+    throw new Error(e);
+  }
+
   // Set filenames
   const imageName = path.basename(gerber, '.zip');
   const destFile = `${path.join(outputDir, imageName)}.png`;
-
-  // Make sure output dir exists
-  try {
-    fs.ensureDirSync(outputDir);
-  } catch (e) {
-    console.error(e);
-  }
 
   return new Promise((resolve, reject) => {
     extractArchive(gerber, tmpDir);
@@ -124,8 +138,7 @@ function gerberToImage(gerber, imgConfig, tmpDir, outputDir) {
       })
       .catch((e) => {
         cleanupFiles(tmpDir);
-        handleError(e);
-        reject(e);
+        reject(new Error(e));
       });
   });
 }
