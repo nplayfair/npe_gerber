@@ -1,4 +1,4 @@
-const StreamZip = require('node-stream-zip');
+const AdmZip = require('adm-zip');
 const fs = require('fs-extra');
 const path = require('path');
 const pcbStackup = require('pcb-stackup');
@@ -44,73 +44,28 @@ function handleError(e) {
  * @returns {Promise} Promise object represents number of files extracted
  */
 function extractArchive(fileName, tmpDir) {
-  return new Promise((resolve, reject) => {
-    // Check archive exists
-    try {
-      if (!fs.existsSync(fileName)) {
-        return reject(new Error('Archive does not exist.'));
-      }
-      if (!fs.existsSync(tmpDir)) {
-        return reject(new Error('Temporary folder does not exist.'));
-      }
-    } catch (e) {
-      throw new Error(e);
+  // Check archive exists
+  try {
+    if (!fs.existsSync(fileName)) {
+      throw Error('Archive does not exist.');
     }
-    // Configure archive to use
-    const archive = new StreamZip({
-      file: fileName,
-      storeEntries: true,
-    });
-    // Handle errors
-    archive.on('error', (err) =>
-      reject(new Error(`Error extracting archive: ${err}`))
-    );
-    // Extract
-    archive.on('ready', () => {
-      const extDir = path.join(tmpDir, 'archive');
-      fs.mkdirSync(extDir, { recursive: true });
-      archive.extract(null, extDir, (err, count) => {
-        if (err) throw new Error(err);
-        archive.close();
-        console.log('Extraction complete');
-        return resolve(count);
-      });
-    });
-    return true;
-  });
+    if (!fs.existsSync(tmpDir)) {
+      throw Error('Temporary folder does not exist.');
+    }
+  } catch (e) {
+    throw new Error(e);
+  }
+
+  const zip = new AdmZip(fileName);
+  zip.extractAllTo(path.join(tmpDir, 'archive'));
 }
 
 /**
- * Take in a zip file and return an array of the layers files
- * @param {string} fileName Name of the file to be extracted
- * @param {string} tmpDir Temporary directory to extract to
+ * Take in a directory of layer files and return an array of the layers files
+ * @param {string} dir Directory containing layer files
  * @returns {Array} Array of paths to the layers files
  */
-function getLayers(fileName, tmpDir) {
-  return new Promise((resolve, reject) => {
-    const extractDir = path.join(tmpDir, 'archive');
-    extractArchive(fileName, tmpDir)
-      .then((numfiles) => {
-        console.log(`${numfiles} files extracted successfully`);
-        const layers = gerberFiles.map((layerName) => ({
-          filename: layerName,
-          gerber: fs.createReadStream(path.join(extractDir, layerName)),
-        }));
-        if (numfiles > 0) {
-          // Some files were extracted
-          resolve(layers);
-        } else {
-          const errMsg = 'No files were extracted';
-          reject(errMsg);
-        }
-      })
-      .catch((e) => {
-        console.log(e);
-      });
-  });
-}
-
-function getLayers2(dir) {
+function getLayers(dir) {
   return new Promise((resolve, reject) => {
     // Make sure the directory exists
     if (!fs.existsSync(dir)) {
@@ -166,7 +121,8 @@ function gerberToImage(gerber, imgConfig, tmpDir, outputDir) {
   }
 
   return new Promise((resolve, reject) => {
-    getLayers(gerber, tmpDir)
+    extractArchive(gerber, tmpDir);
+    getLayers(path.join(tmpDir, 'archive'))
       .then(pcbStackup)
       .then((stackup) => {
         sharp(Buffer.from(stackup.top.svg), { density: imgConfig.density })
@@ -189,7 +145,6 @@ function gerberToImage(gerber, imgConfig, tmpDir, outputDir) {
 module.exports = {
   cleanupFiles,
   getLayers,
-  getLayers2,
   extractArchive,
   config,
   gerberToImage,
