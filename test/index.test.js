@@ -18,6 +18,7 @@ const imgConfig = {
 
 // getLayers
 test('Promise of an array of layers from a given folder', () => {
+  expect.assertions(1);
   return fileProc.getLayers(testLayers).then((data) => {
     expect(data).toEqual(
       expect.arrayContaining([
@@ -31,12 +32,14 @@ test('Promise of an array of layers from a given folder', () => {
 });
 
 test('Non-existent folder should reject promise with error', () => {
+  expect.assertions(1);
   return expect(fileProc.getLayers('./invalid_folder')).rejects.toThrow(
     'Layers folder does not exist.'
   );
 });
 
 test('Folder with incorrect number of layers should reject promise with error', () => {
+  expect.assertions(1);
   return expect(fileProc.getLayers(emptyFolder)).rejects.toThrow(
     'Layer not found.'
   );
@@ -83,6 +86,7 @@ test('Invalid archive file should throw an error', () => {
 });
 
 test('Gerber archive should resolve promise and return a filename of an image', () => {
+  expect.assertions(1);
   return expect(
     fileProc.gerberToImage(testGerber, imgConfig, tmpDir, imgDir)
   ).resolves.toEqual(expect.stringContaining('Arduino-Pro-Mini.png'));
