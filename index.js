@@ -26,18 +26,6 @@ function config(folderConfig) {
 }
 
 /**
- * Handle errors, log to console and return the error object
- * @param {Object} Error object
- * @returns {Object} Error object
- */
-function handleError(e) {
-  // Clean up temp files
-  // cleanupFiles();
-  console.error(e);
-  return e;
-}
-
-/**
  * Extracts the passed in zip file
  * @param {string} fileName Name of the file to be extracted
  * @param {string} tmpDir Temporary directory to extract to
