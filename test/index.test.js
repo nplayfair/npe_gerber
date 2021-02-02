@@ -1,24 +1,45 @@
 /* eslint-disable */
 const path = require('path');
 const fs = require('fs-extra');
-const fileProc = require('../index.js');
+const { ImageGenerator } = require('../index.js');
+require('../index.js');
 
 const testGerber = path.join(__dirname, 'Arduino-Pro-Mini.zip');
 const testLayers = path.join(__dirname, 'layers');
 const emptyFolder = path.join(__dirname, 'layers', 'Empty');
-const tmpDir = path.join(__dirname, 'tmp');
-const imgDir = path.join(__dirname, 'tmp');
-const nonWritableDir = fs.ensureDirSync(path.join(tmpDir, 'no-write'), 0o400);
-
+// const tmpDir = path.join(__dirname, 'tmp');
+// const imgDir = path.join(__dirname, 'tmp');
+const folderConfig = {
+  tmpDir: path.join(__dirname, 'tmp'),
+  imgDir: path.join(__dirname, 'tmp'),
+};
+const noTempConfig = {
+  tmpDir: emptyFolder,
+  imgDir: path.join(__dirname, 'tmp'),
+};
+const noImageConfig = {
+  tmpDir: path.join(__dirname, 'tmp'),
+  imgDir: emptyFolder,
+};
+const nonWritableDir = fs.ensureDirSync(path.join(folderConfig.tmpDir, 'no-write'), 0o400);
 const imgConfig = {
   resizeWidth: 600,
   density: 1000,
   compLevel: 1,
 };
 
+const fileProc = new ImageGenerator(folderConfig, imgConfig);
+const fileProcNoTemp = new ImageGenerator(noTempConfig, imgConfig);
+const fileProcNoImage = new ImageGenerator(noImageConfig, imgConfig);
+
+/**************
+ * Tests
+ ***************/
+
 // getLayers
 test('Promise of an array of layers from a given folder', () => {
-  return fileProc.getLayers(testLayers).then((data) => {
+  expect.assertions(1);
+  return ImageGenerator.getLayers(testLayers).then((data) => {
     expect(data).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -31,59 +52,64 @@ test('Promise of an array of layers from a given folder', () => {
 });
 
 test('Non-existent folder should reject promise with error', () => {
-  return expect(fileProc.getLayers('./invalid_folder')).rejects.toThrow(
-    'Layers folder does not exist.'
+  expect.assertions(1);
+  return expect(ImageGenerator.getLayers('./invalid_folder')).rejects.toThrow(
+    new Error('Layers folder does not exist.')
   );
 });
 
 test('Folder with incorrect number of layers should reject promise with error', () => {
-  return expect(fileProc.getLayers(emptyFolder)).rejects.toThrow(
-    'Layer not found.'
+  expect.assertions(1);
+  return expect(ImageGenerator.getLayers(emptyFolder)).rejects.toThrow(
+    new Error('Layer not found.')
   );
 });
 
 // extractArchive
 test('Non-existent archive should throw an error', () => {
-  expect(() => fileProc.extractArchive('invalid.zip', tmpDir).toThrow(Error));
+  expect(() =>
+    ImageGenerator.extractArchive('invalid.zip', folderConfig.tmpDir).toThrow(Error)
+  );
 });
 
 test('Temp dir not existing should throw an error', () => {
   expect(() =>
-    fileProc.extractArchive(testGerber, './invalid_dir').toThrow(Error)
+    ImageGenerator.extractArchive(testGerber, './invalid_dir').toThrow(Error)
   );
 });
 
 test('Should extract archive and resolve with the number of files extracted', () => {
-  expect(() => fileProc.extractArchive(testGerber, tmpDir).toBe(12));
+  expect(() => ImageGenerator.extractArchive(testGerber, folderConfig.tmpDir).toBe(12));
 });
 
 // gerberToImage
 test('Temp dir not existing should throw an error', () => {
   expect(() =>
-    fileProc
-      .gerberToImage(testGerber, imgConfig, './invalid_dir', imgDir)
-      .toThrow('Temporary folder does not exist.')
+    fileProcNoTemp
+      .gerberToImage(testGerber)
+      .toThrow(new Error('Temporary folder does not exist.'))
   );
 });
 
 test('Output dir not existing should throw an error', () => {
   expect(() =>
-    fileProc
-      .gerberToImage(testGerber, imgConfig, tmpDir, './invalid_dir')
-      .toThrow('Output folder does not exist.')
+    fileProcNoImage
+      .gerberToImage(testGerber)
+      .toThrow(new Error('Output folder does not exist.'))
   );
 });
 
 test('Invalid archive file should throw an error', () => {
   expect(() =>
     fileProc
-      .gerberToImage('invalid.zip', imgConfig, tmpDir, imgDir)
-      .toThrow('Archive does not exist.')
+      .gerberToImage('invalid.zip')
+      .toThrow(new Error('Archive does not exist.'))
   );
 });
 
 test('Gerber archive should resolve promise and return a filename of an image', () => {
+  expect.assertions(1);
   return expect(
-    fileProc.gerberToImage(testGerber, imgConfig, tmpDir, imgDir)
+    fileProc.gerberToImage(testGerber)
   ).resolves.toEqual(expect.stringContaining('Arduino-Pro-Mini.png'));
 });
