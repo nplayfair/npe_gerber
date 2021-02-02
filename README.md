@@ -10,24 +10,25 @@ Requires node version 10 or higher.
 ## Usage
 
 ```
-const fileProc = require('@nplayfair/npe_gerber');
+const { ImageGenerator } = require('@nplayfair/npe_gerber');
 
 const folderConfig = {
     tmpDir: path.join(__dirname, 'tmp'),
     imgDir: path.join(__dirname, 'img')
 }
 
-const config = {
+const imageConfig = {
+    // Refer to the sharp documentation for these values
     resizeWidth: 600,
     density: 1000,
     compLevel: 1
 }
 
-fileProc.config(folderConfig);
+const gerberArchive = '/path/to/gerber.zip';
 
-let gerberArchive = '/path/to/gerber.zip';
+const fileProc = new ImageGenerator(folderConfig, imageConfig);
 
-fileProc.gerberToImage(gerberArchive, config, folderConfig.tmpDir, folderConfig.imgDir)
+fileProc.gerberToImage(gerberArchive)
       .then(filename => {
         console.log(`Generated image ${filename}`);
       })
