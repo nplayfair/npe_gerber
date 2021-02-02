@@ -7,8 +7,7 @@ require('../index.js');
 const testGerber = path.join(__dirname, 'Arduino-Pro-Mini.zip');
 const testLayers = path.join(__dirname, 'layers');
 const emptyFolder = path.join(__dirname, 'layers', 'Empty');
-// const tmpDir = path.join(__dirname, 'tmp');
-// const imgDir = path.join(__dirname, 'tmp');
+const nonWritableDir = fs.ensureDirSync(path.join(folderConfig.tmpDir, 'no-write'), 0o400);
 const folderConfig = {
   tmpDir: path.join(__dirname, 'tmp'),
   imgDir: path.join(__dirname, 'tmp'),
@@ -21,7 +20,6 @@ const noImageConfig = {
   tmpDir: path.join(__dirname, 'tmp'),
   imgDir: emptyFolder,
 };
-const nonWritableDir = fs.ensureDirSync(path.join(folderConfig.tmpDir, 'no-write'), 0o400);
 const imgConfig = {
   resizeWidth: 600,
   density: 1000,
