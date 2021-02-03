@@ -16,7 +16,6 @@ const gerberFiles = [
 
 class ImageGenerator {
   constructor(folderConfig, imgConfig) {
-    // this.folderConfig = folderConfig;
     this.tmpDir = folderConfig.tmpDir;
     this.imgDir = folderConfig.imgDir;
     this.imgConfig = imgConfig;
