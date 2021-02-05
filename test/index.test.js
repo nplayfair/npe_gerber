@@ -6,6 +6,7 @@ const { ImageGenerator } = require('../index.js');
 require('../index.js');
 
 const testGerber = path.join(__dirname, 'Arduino-Pro-Mini.zip');
+const incompleteGerber = path.join(__dirname, 'incomplete.zip');
 const testLayers = path.join(__dirname, 'layers');
 const emptyFolder = path.join(__dirname, 'layers', 'Empty');
 const folderConfig = {
@@ -102,6 +103,14 @@ test('Invalid archive file should throw an error', () => {
     fileProc
       .gerberToImage('invalid.zip')
       .toThrow(new Error('Archive does not exist.'))
+  );
+});
+
+test('Archive with incomplete set of layers should throw an error', () => {
+  expect(() =>
+    fileProc
+      .gerberToImage(incompleteGerber)
+      .toThrow(Error)
   );
 });
 
