@@ -1,6 +1,7 @@
 /* eslint-disable */
 const path = require('path');
 const fs = require('fs-extra');
+const Readable = require('stream').Readable;
 const { ImageGenerator } = require('../index.js');
 require('../index.js');
 
@@ -109,4 +110,12 @@ test('Gerber archive should resolve promise and return a filename of an image', 
   return expect(
     fileProc.gerberToImage(testGerber)
   ).resolves.toEqual(expect.stringContaining('Arduino-Pro-Mini.png'));
+});
+
+// gerberToStream
+test('Gerber archive should resolve promise and return a png stream', () => {
+  expect.assertions(1);
+  return expect(
+    fileProc.gerberToStream(testGerber)
+  ).resolves.toBeInstanceOf(Readable);
 });
