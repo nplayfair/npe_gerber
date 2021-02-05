@@ -3,6 +3,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const pcbStackup = require('pcb-stackup');
 const sharp = require('sharp');
+const { Readable } = require('stream');
 
 // Filenames we need to extract from the archive
 const gerberFiles = [
@@ -139,6 +140,54 @@ class ImageGenerator {
         .then(() => {
           ImageGenerator.cleanupFiles(this.tmpDir);
           resolve(destFile);
+        })
+        .catch((e) => {
+          ImageGenerator.cleanupFiles(this.tmpDir);
+          reject(new Error(e));
+        });
+    });
+  }
+
+  /**
+   * Take an archive containing gerber files and return a stream containing
+   * a PNG image from the gerber
+   * @param {string} gerber Path to an archive file containing gerber
+   * @returns {Promise.<stream.Readable>} Promise that resolves to a PNG stream
+   */
+  gerberToStream(gerber) {
+    // Check temp and output dirs exist
+    try {
+      if (!fs.existsSync(gerber)) {
+        throw Error('Archive does not exist.');
+      }
+      if (!fs.existsSync(this.tmpDir)) {
+        throw Error('Temporary folder does not exist.');
+      }
+      if (!fs.existsSync(this.imgDir)) {
+        throw Error('Output folder does not exist.');
+      }
+    } catch (e) {
+      throw new Error(e);
+    }
+
+    return new Promise((resolve, reject) => {
+      ImageGenerator.extractArchive(gerber, this.tmpDir);
+      ImageGenerator.getLayers(path.join(this.tmpDir, 'archive'))
+        .then(pcbStackup)
+        .then((stackup) => {
+          sharp(Buffer.from(stackup.top.svg), {
+            density: this.imgConfig.density,
+          })
+            .resize({ width: this.imgConfig.resizeWidth })
+            .png({ compressionLevel: this.imgConfig.compLevel })
+            .toBuffer()
+            .then((buffer) => {
+              ImageGenerator.cleanupFiles(this.tmpDir);
+              const stream = new Readable();
+              stream.push(buffer);
+              stream.push(null);
+              resolve(stream);
+            });
         })
         .catch((e) => {
           ImageGenerator.cleanupFiles(this.tmpDir);
