@@ -35,6 +35,19 @@ const fileProcNoImage = new ImageGenerator(noImageConfig, imgConfig);
  * Tests
  ***************/
 
+// Test constructor
+test('Create ImageGenerator object with the passed in config values', () => {
+  const imgGen = new ImageGenerator(folderConfig, imgConfig);
+  expect(imgGen).toBeInstanceOf(ImageGenerator);
+  // Image processing configuration
+  expect(imgGen.imgConfig.resizeWidth).toBe(600);
+  expect(imgGen.imgConfig.density).toBe(1000);
+  expect(imgGen.imgConfig.compLevel).toBe(1);
+  // Folders
+  expect(imgGen.tmpDir).toBe(path.join(__dirname, 'tmp'));
+  expect(imgGen.imgDir).toBe(path.join(__dirname, 'tmp'));
+})
+
 // getLayers
 test('Promise of an array of layers from a given folder', () => {
   expect.assertions(1);
