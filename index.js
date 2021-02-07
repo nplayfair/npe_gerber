@@ -5,21 +5,12 @@ const pcbStackup = require('pcb-stackup');
 const sharp = require('sharp');
 const { Readable } = require('stream');
 
-// Filenames we need to extract from the archive
-const gerberFiles = [
-  'CAMOutputs/DrillFiles/drills.xln',
-  'CAMOutputs/GerberFiles/copper_top.gbr',
-  'CAMOutputs/GerberFiles/silkscreen_top.gbr',
-  'CAMOutputs/GerberFiles/soldermask_top.gbr',
-  'CAMOutputs/GerberFiles/solderpaste_top.gbr',
-  'CAMOutputs/GerberFiles/profile.gbr',
-];
-
 class ImageGenerator {
-  constructor(folderConfig, imgConfig) {
+  constructor(folderConfig, imgConfig, layerNames) {
     this.tmpDir = folderConfig.tmpDir;
     this.imgDir = folderConfig.imgDir;
     this.imgConfig = imgConfig;
+    this.layerNames = layerNames;
 
     // Ensure that the folders exist
     try {
@@ -56,9 +47,10 @@ class ImageGenerator {
   /**
    * Take in a directory of layer files and return an array of the layers files
    * @param {string} dir Directory containing layer files
+   * @param {Array} layerNames Array of filenames for the desired layers
    * @returns {Array} Array of paths to the layers files
    */
-  static getLayers(dir) {
+  static getLayers(dir, layerNames) {
     return new Promise((resolve, reject) => {
       // Make sure the directory exists
       if (!fs.existsSync(dir)) {
@@ -66,12 +58,12 @@ class ImageGenerator {
       }
       // Check that the required layer files exist in source dir
       let layersValid = true;
-      gerberFiles.forEach((layer) => {
+      layerNames.forEach((layer) => {
         if (!fs.existsSync(path.join(dir, layer))) layersValid = false;
       });
       if (!layersValid) return reject(new Error('Layer not found.'));
       // Construct array of layers that match the supplied filenames array
-      const layers = gerberFiles.map((layerName) => ({
+      const layers = layerNames.map((layerName) => ({
         filename: layerName,
         gerber: fs.createReadStream(path.join(dir, layerName)),
       }));
@@ -127,7 +119,10 @@ class ImageGenerator {
 
     return new Promise((resolve, reject) => {
       ImageGenerator.extractArchive(gerber, this.tmpDir);
-      ImageGenerator.getLayers(path.join(this.tmpDir, 'archive'))
+      ImageGenerator.getLayers(
+        path.join(this.tmpDir, 'archive'),
+        this.layerNames
+      )
         .then(pcbStackup)
         .then((stackup) => {
           sharp(Buffer.from(stackup.top.svg), {
@@ -172,7 +167,10 @@ class ImageGenerator {
 
     return new Promise((resolve, reject) => {
       ImageGenerator.extractArchive(gerber, this.tmpDir);
-      ImageGenerator.getLayers(path.join(this.tmpDir, 'archive'))
+      ImageGenerator.getLayers(
+        path.join(this.tmpDir, 'archive'),
+        this.layerNames
+      )
         .then(pcbStackup)
         .then((stackup) => {
           sharp(Buffer.from(stackup.top.svg), {

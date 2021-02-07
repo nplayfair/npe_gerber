@@ -26,10 +26,18 @@ const imgConfig = {
   density: 1000,
   compLevel: 1,
 };
+const layerNames = [
+  'CAMOutputs/DrillFiles/drills.xln',
+  'CAMOutputs/GerberFiles/copper_top.gbr',
+  'CAMOutputs/GerberFiles/silkscreen_top.gbr',
+  'CAMOutputs/GerberFiles/soldermask_top.gbr',
+  'CAMOutputs/GerberFiles/solderpaste_top.gbr',
+  'CAMOutputs/GerberFiles/profile.gbr',
+];
 
-const fileProc = new ImageGenerator(folderConfig, imgConfig);
-const fileProcNoTemp = new ImageGenerator(noTempConfig, imgConfig);
-const fileProcNoImage = new ImageGenerator(noImageConfig, imgConfig);
+const fileProc = new ImageGenerator(folderConfig, imgConfig, layerNames);
+const fileProcNoTemp = new ImageGenerator(noTempConfig, imgConfig, layerNames);
+const fileProcNoImage = new ImageGenerator(noImageConfig, imgConfig, layerNames);
 
 /**************
  * Tests
@@ -51,7 +59,7 @@ test('Create ImageGenerator object with the passed in config values', () => {
 // getLayers
 test('Promise of an array of layers from a given folder', () => {
   expect.assertions(1);
-  return ImageGenerator.getLayers(testLayers).then((data) => {
+  return ImageGenerator.getLayers(testLayers, layerNames).then((data) => {
     expect(data).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -65,14 +73,14 @@ test('Promise of an array of layers from a given folder', () => {
 
 test('Non-existent folder should reject promise with error', () => {
   expect.assertions(1);
-  return expect(ImageGenerator.getLayers('./invalid_folder')).rejects.toThrow(
+  return expect(ImageGenerator.getLayers('./invalid_folder', layerNames)).rejects.toThrow(
     new Error('Layers folder does not exist.')
   );
 });
 
 test('Folder with incorrect number of layers should reject promise with error', () => {
   expect.assertions(1);
-  return expect(ImageGenerator.getLayers(emptyFolder)).rejects.toThrow(
+  return expect(ImageGenerator.getLayers(emptyFolder, layerNames)).rejects.toThrow(
     new Error('Layer not found.')
   );
 });
