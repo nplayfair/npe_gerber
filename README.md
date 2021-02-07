@@ -23,9 +23,18 @@ const imageConfig = {
     compLevel: 1
 }
 
+const layerNames = [
+  'CAMOutputs/DrillFiles/drills.xln',
+  'CAMOutputs/GerberFiles/copper_top.gbr',
+  'CAMOutputs/GerberFiles/silkscreen_top.gbr',
+  'CAMOutputs/GerberFiles/soldermask_top.gbr',
+  'CAMOutputs/GerberFiles/solderpaste_top.gbr',
+  'CAMOutputs/GerberFiles/profile.gbr',
+];
+
 const gerberArchive = '/path/to/gerber.zip';
 
-const fileProc = new ImageGenerator(folderConfig, imageConfig);
+const fileProc = new ImageGenerator(folderConfig, imageConfig, layerNames);
 
 fileProc.gerberToImage(gerberArchive)
       .then(filename => {
@@ -47,15 +56,27 @@ const imageConfig = {
     compLevel: 1
 }
 
+const layerNames = [
+  'CAMOutputs/DrillFiles/drills.xln',
+  'CAMOutputs/GerberFiles/copper_top.gbr',
+  'CAMOutputs/GerberFiles/silkscreen_top.gbr',
+  'CAMOutputs/GerberFiles/soldermask_top.gbr',
+  'CAMOutputs/GerberFiles/solderpaste_top.gbr',
+  'CAMOutputs/GerberFiles/profile.gbr',
+];
+
 const gerberArchive = '/path/to/gerber.zip';
 
-const fileProc = new ImageGenerator(folderConfig, imageConfig);
+const fileProc = new ImageGenerator(folderConfig, imageConfig, layerNames);
 
 fileProc.gerberToStream(gerberArchive)
       .then(stream => {
         // Do something with the stream
       })
 ```
+## Layer Names
+
+The constructor must be passed an array of filenames that correspond to the layers in the gerber archives you expect to be uploaded. The example above shows which names are used by EAGLE but other applications may use different filenames.
 
 ## Image Processing Configuratation
 
