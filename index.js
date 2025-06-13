@@ -1,10 +1,13 @@
+//Modules
 const AdmZip = require('adm-zip');
 const fs = require('fs-extra');
 const path = require('path');
 const pcbStackup = require('pcb-stackup');
 const sharp = require('sharp');
 const { Readable } = require('stream');
+const { Buffer } = require('node:buffer');
 
+//Class definition
 class ImageGenerator {
   constructor(folderConfig, imgConfig, layerNames) {
     this.tmpDir = folderConfig.tmpDir;
@@ -121,7 +124,7 @@ class ImageGenerator {
       ImageGenerator.extractArchive(gerber, this.tmpDir);
       ImageGenerator.getLayers(
         path.join(this.tmpDir, 'archive'),
-        this.layerNames
+        this.layerNames,
       )
         .then(pcbStackup)
         .then((stackup) => {
@@ -169,7 +172,7 @@ class ImageGenerator {
       ImageGenerator.extractArchive(gerber, this.tmpDir);
       ImageGenerator.getLayers(
         path.join(this.tmpDir, 'archive'),
-        this.layerNames
+        this.layerNames,
       )
         .then(pcbStackup)
         .then((stackup) => {
