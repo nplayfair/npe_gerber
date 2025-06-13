@@ -6,6 +6,7 @@ const pcbStackup = require('pcb-stackup');
 const sharp = require('sharp');
 const { Readable } = require('stream');
 const { Buffer } = require('node:buffer');
+const { existsSync, accessSync, constants } = require('node:fs');
 
 //Class definition
 class ImageGenerator {
@@ -15,10 +16,18 @@ class ImageGenerator {
     this.imgConfig = imgConfig;
     this.layerNames = layerNames;
 
-    // Ensure that the folders exist
+    //Ensure folders exist
     try {
-      fs.ensureDirSync(this.tmpDir);
-      fs.ensureDirSync(this.imgDir);
+      if (!existsSync(this.tmpDir)) throw 'Temp dir does not exist';
+      if (!existsSync(this.imgDir)) throw 'Image dir does not exist';
+    } catch (error) {
+      throw new Error(error);
+    }
+
+    //Check folder permissions
+    try {
+      accessSync(this.tmpDir, constants.R_OK | constants.W_OK);
+      accessSync(this.imgDir, constants.R_OK | constants.W_OK);
     } catch (error) {
       throw new Error(error);
     }
