@@ -42,10 +42,10 @@ class ImageGenerator {
   static extractArchive(fileName, tmpDir) {
     // Check archive exists
     try {
-      if (!fs.existsSync(fileName)) {
+      if (!existsSync(fileName)) {
         throw Error('Archive does not exist.');
       }
-      if (!fs.existsSync(tmpDir)) {
+      if (!existsSync(tmpDir)) {
         throw Error('Temporary folder does not exist.');
       }
     } catch (e) {
@@ -65,13 +65,13 @@ class ImageGenerator {
   static getLayers(dir, layerNames) {
     return new Promise((resolve, reject) => {
       // Make sure the directory exists
-      if (!fs.existsSync(dir)) {
+      if (!existsSync(dir)) {
         return reject(new Error('Layers folder does not exist.'));
       }
       // Check that the required layer files exist in source dir
       let layersValid = true;
       layerNames.forEach((layer) => {
-        if (!fs.existsSync(path.join(dir, layer))) layersValid = false;
+        if (!existsSync(path.join(dir, layer))) layersValid = false;
       });
       if (!layersValid) return reject(new Error('Layer not found.'));
       // Construct array of layers that match the supplied filenames array
@@ -112,13 +112,13 @@ class ImageGenerator {
 
     // Check temp and output dirs exist
     try {
-      if (!fs.existsSync(gerber)) {
+      if (!existsSync(gerber)) {
         throw Error('Archive does not exist.');
       }
-      if (!fs.existsSync(this.tmpDir)) {
+      if (!existsSync(this.tmpDir)) {
         throw Error('Temporary folder does not exist.');
       }
-      if (!fs.existsSync(this.imgDir)) {
+      if (!existsSync(this.imgDir)) {
         throw Error('Output folder does not exist.');
       }
     } catch (e) {
@@ -164,13 +164,13 @@ class ImageGenerator {
   gerberToStream(gerber) {
     // Check temp and output dirs exist
     try {
-      if (!fs.existsSync(gerber)) {
+      if (!existsSync(gerber)) {
         throw Error('Archive does not exist.');
       }
-      if (!fs.existsSync(this.tmpDir)) {
+      if (!existsSync(this.tmpDir)) {
         throw Error('Temporary folder does not exist.');
       }
-      if (!fs.existsSync(this.imgDir)) {
+      if (!existsSync(this.imgDir)) {
         throw Error('Output folder does not exist.');
       }
     } catch (e) {
