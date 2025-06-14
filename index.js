@@ -1,12 +1,27 @@
 //Modules
 const AdmZip = require('adm-zip');
-const fs = require('fs-extra');
+const { emptyDirSync } = require('fs-extra');
 const path = require('path');
 const pcbStackup = require('pcb-stackup');
 const sharp = require('sharp');
-const { Readable } = require('stream');
+const { Readable } = require('node:stream');
 const { Buffer } = require('node:buffer');
-const { existsSync, accessSync, constants } = require('node:fs');
+const {
+  existsSync,
+  accessSync,
+  createReadStream,
+  mkdirSync,
+  chmodSync,
+  constants,
+} = require('node:fs');
+
+//ensureDirSync method
+function ensureDirSync(directory) {
+  if (!existsSync(directory)) {
+    mkdirSync(directory, { recursive: true });
+    chmodSync(directory, 0o644);
+  }
+}
 
 //Class definition
 class ImageGenerator {
@@ -105,7 +120,7 @@ class ImageGenerator {
       // Construct array of layers that match the supplied filenames array
       const layers = layerNames.map((layerName) => ({
         filename: layerName,
-        gerber: fs.createReadStream(path.join(dir, layerName)),
+        gerber: createReadStream(path.join(dir, layerName)),
       }));
       return resolve(layers);
     });
@@ -118,7 +133,7 @@ class ImageGenerator {
   static cleanupFiles(dir) {
     try {
       const folder = path.join(dir, 'archive');
-      fs.emptyDirSync(folder);
+      emptyDirSync(folder);
     } catch (err) {
       throw new Error(err);
     }
@@ -133,7 +148,8 @@ class ImageGenerator {
   gerberToImage(gerber) {
     // Create output dir if it doesn't exist
     try {
-      fs.ensureDirSync(this.imgDir, 0o644);
+      // fs.ensureDirSync(this.imgDir, 0o644);
+      ensureDirSync(this.imgDir);
     } catch (e) {
       throw new Error(e);
     }

@@ -1,8 +1,6 @@
-/* eslint-disable */
 const path = require('path');
-const fs = require('fs-extra');
-const { readdirSync, Dirent } = require('node:fs');
-const Readable = require('stream').Readable;
+const { readdirSync, ReadStream } = require('node:fs');
+const { Readable } = require('node:stream');
 const { ImageGenerator } = require('../index.js');
 require('../index.js');
 
@@ -121,7 +119,7 @@ describe('Getting layers', () => {
         expect.arrayContaining([
           expect.objectContaining({
             filename: expect.any(String),
-            gerber: expect.any(fs.ReadStream),
+            gerber: expect.any(ReadStream),
           }),
         ]),
       );
