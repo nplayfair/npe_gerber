@@ -37,7 +37,7 @@ class ImageGenerator {
    * Extracts the passed in zip file
    * @param {string} fileName Name of the file to be extracted
    * @param {string} tmpDir Temporary directory to extract to
-   * @returns {Promise} Promise object represents number of files extracted
+   * @returns {number} Number of objects contained in the archive
    */
   static extractArchive(fileName, tmpDir) {
     // Check archive exists
@@ -54,6 +54,34 @@ class ImageGenerator {
 
     const zip = new AdmZip(fileName);
     zip.extractAllTo(path.join(tmpDir, 'archive'));
+
+    return zip.getEntries().length;
+  }
+
+  /**
+   * Temporary test method zip file
+   * @param {string} fileName Name of the file to be extracted
+   * @param {string} tmpDir Temporary directory to extract to
+   * @returns {number} Number of objects contained in the archive
+   */
+  static testArchive(fileName, tmpDir) {
+    // Check archive exists
+    try {
+      if (!existsSync(fileName)) {
+        throw Error('Archive does not exist.');
+      }
+      if (!existsSync(tmpDir)) {
+        throw Error('Temporary folder does not exist.');
+      }
+    } catch (e) {
+      throw new Error(e);
+    }
+    try {
+      const zip = new AdmZip(fileName);
+      return zip.getEntries().length;
+    } catch (error) {
+      throw new Error(error);
+    }
   }
 
   /**

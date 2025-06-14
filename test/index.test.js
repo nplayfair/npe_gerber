@@ -1,6 +1,7 @@
 /* eslint-disable */
 const path = require('path');
 const fs = require('fs-extra');
+const { readdirSync, Dirent } = require('node:fs');
 const Readable = require('stream').Readable;
 const { ImageGenerator } = require('../index.js');
 require('../index.js');
@@ -9,6 +10,7 @@ const testGerber = path.join(__dirname, 'Arduino-Pro-Mini.zip');
 const incompleteGerber = path.join(__dirname, 'incomplete.zip');
 const testLayers = path.join(__dirname, 'layers');
 const emptyFolder = path.join(__dirname, 'layers', 'Empty');
+const archiveTestFolder = path.join(__dirname, 'archiveTest');
 const folderConfig = {
   tmpDir: path.join(__dirname, 'tmp'),
   imgDir: path.join(__dirname, 'tmp'),
@@ -110,6 +112,7 @@ describe('Passing in', () => {
 });
 
 // Testing static methods
+//Layer methods
 describe('Getting layers', () => {
   test('should return a promise of array layers', () => {
     expect.assertions(1);
@@ -138,28 +141,41 @@ describe('Getting layers', () => {
   });
 });
 
+//Archive methods
 describe('When extracting an archive', () => {
   test('a non-existent archive should throw an error', () => {
     expect(() =>
-      ImageGenerator.extractArchive(
-        'invalid.zip',
-        folderConfig.tmpDir,
-      ).toThrow(),
-    );
+      ImageGenerator.extractArchive('invalid.zip', folderConfig.tmpDir),
+    ).toThrow();
   });
   test('if the temp dir does not exist it should throw an error', () => {
     expect(() =>
-      ImageGenerator.extractArchive(testGerber, './invalid_dir').toThrow(Error),
+      ImageGenerator.extractArchive(testGerber, './invalid_dir'),
+    ).toThrow(Error);
+  });
+  test('it should load the archive and return the number of files extracted', () => {
+    expect(() => {
+      ImageGenerator.testArchive(testGerber, archiveTestFolder);
+    }).not.toThrow();
+    expect(ImageGenerator.testArchive(testGerber, archiveTestFolder)).toEqual(
+      12,
     );
   });
-  test('it should extract archive and resolve with the number of files extracted', () => {
-    expect(() =>
-      ImageGenerator.extractArchive(testGerber, folderConfig.tmpDir).toBe(12),
+  test('it should extract archive and all files should be present', () => {
+    expect(ImageGenerator.testArchive(testGerber, archiveTestFolder)).toEqual(
+      12,
     );
+    ImageGenerator.extractArchive(testGerber, archiveTestFolder);
+    const dirents = readdirSync(archiveTestFolder, {
+      recursive: true,
+      withFileTypes: true,
+    });
+    const numOutputFiles = dirents.filter((dirent) => dirent.isFile());
+    expect(numOutputFiles).toHaveLength(12);
   });
 });
 
-// Gerber methods
+//Gerber methods
 describe('Converting a gerber to an image', () => {
   test('temp dir not existing should throw an error', () => {
     expect(() =>

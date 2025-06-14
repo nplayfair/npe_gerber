@@ -107,3 +107,4 @@ dist
 gerber/
 hello.txt
 test/tmp/*
+test/archiveTest
