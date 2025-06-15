@@ -2,7 +2,8 @@
   "name": "@nplayfair/npe_gerber",
   "version": "0.3.0",
   "description": "Create a PCB image from gerber files",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "types/npe_gerber.d.ts",
   "scripts": {
     "test": "jest",
     "lint": "eslint ."
