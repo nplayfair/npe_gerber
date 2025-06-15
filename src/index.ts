@@ -58,7 +58,7 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
    * Temporary test method zip file
 
    */
-  public testArchive(fileName: string, tmpDir: string) {
+  public testArchive(fileName: string, tmpDir: string): number {
     // Check archive exists
     try {
       if (!existsSync(fileName)) {
@@ -70,41 +70,9 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
     } catch (e: unknown) {
       console.error(e);
     }
-    try {
-      const zip = new AdmZip(fileName);
-      return zip.getEntries().length;
-    } catch (error: unknown) {
-      console.error(error);
-    }
+    const zip = new AdmZip(fileName);
+    return zip.getEntries().length;
   }
-
-  //Take in a directory of layer files and return an array of the layers files
-  // public getLayersOld(dir: string, layerNames: string[]): Promise<Layers[]> {
-  //   if (!existsSync(dir)) throw new Error('Layers folder does not exist');
-
-  //   //Make sure the layer files exist in the folder
-  //   layerNames.forEach((layerName) => {
-  //     if (!existsSync(path.join(dir, layerName))) {
-  //       throw `Missing layer: ${layerName}`;
-  //     }
-  //   });
-
-  //Construct array of layers
-  // const layers: Layers[] = layerNames.map((layerName) => ({
-  //   filename: layerName,
-  //   gerber: createReadStream(path.join(dir, layerName)),
-  // }));
-  // return layers;
-  // const layerPromise = new Promise<Layers[]>(function (resolve, reject) {
-  //   const layers: Layers[] = layerNames.map((layerName) => ({
-  //     filename: layerName,
-  //     gerber: createReadStream(path.join(dir, layerName)),
-  //   }));
-  //   resolve(layers);
-  // });
-
-  // return layerPromise;
-  // }
 
   //Layer promise
   public getLayers(dir: string, layerNames: string[]): Promise<Layers[]> {
@@ -123,7 +91,11 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
         filename: layerName,
         gerber: createReadStream(path.join(dir, layerName)),
       }));
-      resolve(layers);
+      if (layers.length === layerNames.length) {
+        resolve(layers);
+      } else {
+        reject('Invalid layer count');
+      }
     });
     return layersPromise;
   }
