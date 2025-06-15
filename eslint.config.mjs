@@ -1,17 +1,18 @@
-import js from '@eslint/js';
-import globals from 'globals';
-import { defineConfig, globalIgnores } from 'eslint/config';
+// @ts-check
 
-export default defineConfig([
-  globalIgnores(['test/**/*', 'node_modules/**/*']),
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  eslint.configs.recommended,
+  tseslint.configs.recommended,
   {
-    files: ['**/*.{js,mjs,cjs}'],
-    plugins: { js },
-    extends: ['js/recommended'],
+    ignores: [
+      'dist/**',
+      'test/**',
+      'node_modules/**',
+      'webpack.dev.js',
+      'webpack.prod.js',
+    ],
   },
-  { files: ['**/*.js'], languageOptions: { sourceType: 'commonjs' } },
-  {
-    files: ['**/*.{js,mjs,cjs}'],
-    languageOptions: { globals: globals.browser },
-  },
-]);
+);
