@@ -109,13 +109,20 @@ describe('Passing in', () => {
   });
 });
 
-// Testing static methods
 //Layer methods
 describe('Getting layers', () => {
   const imgGen = new ImageGenerator(folderConfig, imgConfig);
-  test('should return an array of layers', () => {
-    expect(imgGen.getLayers(testLayers, layerNames)).toBeInstanceOf(Array);
+  test('should return a promise of array of layers', () => {
+    expect(imgGen.getLayers(testLayers, layerNames)).resolves.toBeInstanceOf(
+      Array,
+    );
   });
+
+  // test('should return a promise of array of layers', () => {
+  //   return imgGen.getLayers(testLayers, layerNames).then((data) => {
+  //     expect(data).toBeInstanceOf(Array);
+  //   });
+  // });
 
   test('should throw error if the layers folder is not valid', () => {
     expect(() => {
@@ -129,6 +136,7 @@ describe('Getting layers', () => {
     }).toThrow();
   });
 });
+
 //Archive methods
 describe('When extracting an archive', () => {
   const imgGen = new ImageGenerator(folderConfig, imgConfig);

@@ -58,7 +58,7 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
    * Temporary test method zip file
 
    */
-  public testArchive(fileName: string, tmpDir: string): number {
+  public testArchive(fileName: string, tmpDir: string) {
     // Check archive exists
     try {
       if (!existsSync(fileName)) {
@@ -78,75 +78,81 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
     }
   }
 
-  /**
-   * Take in a directory of layer files and return an array of the layers files
+  //Take in a directory of layer files and return an array of the layers files
+  // public getLayersOld(dir: string, layerNames: string[]): Promise<Layers[]> {
+  //   if (!existsSync(dir)) throw new Error('Layers folder does not exist');
 
-   */
-  // public getLayers(dir: string, layerNames: string[]) {
-  //   new Promise((resolve, reject) => {
-  //     // Make sure the directory exists
-  //     if (!existsSync(dir)) {
-  //       return reject(new Error('Layers folder does not exist.'));
+  //   //Make sure the layer files exist in the folder
+  //   layerNames.forEach((layerName) => {
+  //     if (!existsSync(path.join(dir, layerName))) {
+  //       throw `Missing layer: ${layerName}`;
   //     }
-  //     // Check that the required layer files exist in source dir
-  //     let layersValid = true;
-  //     layerNames.forEach((layer) => {
-  //       if (!existsSync(path.join(dir, layer))) layersValid = false;
-  //     });
-  //     if (!layersValid) return reject(new Error('Layer not found.'));
-  //     // Construct array of layers that match the supplied filenames array
-  //     const layers = layerNames.map((layerName) => ({
-  //       filename: layerName,
-  //       gerber: createReadStream(path.join(dir, layerName)),
-  //     }));
-  //     return resolve(layers);
   //   });
+
+  //Construct array of layers
+  // const layers: Layers[] = layerNames.map((layerName) => ({
+  //   filename: layerName,
+  //   gerber: createReadStream(path.join(dir, layerName)),
+  // }));
+  // return layers;
+  // const layerPromise = new Promise<Layers[]>(function (resolve, reject) {
+  //   const layers: Layers[] = layerNames.map((layerName) => ({
+  //     filename: layerName,
+  //     gerber: createReadStream(path.join(dir, layerName)),
+  //   }));
+  //   resolve(layers);
+  // });
+
+  // return layerPromise;
   // }
 
-  public getLayers(dir: string, layerNames: string[]): Layers[] {
-    if (!existsSync(dir)) throw new Error('Layers folder does not exist');
-
-    //Make sure the layer files exist in the folder
+  //Layer promise
+  public getLayers(dir: string, layerNames: string[]): Promise<Layers[]> {
+    //Check correct number of layers and folder exists
     layerNames.forEach((layerName) => {
       if (!existsSync(path.join(dir, layerName))) {
         throw `Missing layer: ${layerName}`;
       }
     });
-
-    //Construct array of layers
-    const layers: Layers[] = layerNames.map((layerName) => ({
-      filename: layerName,
-      gerber: createReadStream(path.join(dir, layerName)),
-    }));
-    return layers;
+    if (!existsSync(dir)) {
+      throw new Error('Folder not there');
+    }
+    //Return layer promise
+    const layersPromise = new Promise<Layers[]>(function (resolve, reject) {
+      const layers: Layers[] = layerNames.map((layerName: string) => ({
+        filename: layerName,
+        gerber: createReadStream(path.join(dir, layerName)),
+      }));
+      resolve(layers);
+    });
+    return layersPromise;
   }
 
-  /**
-   * Clean up the archive folder in the specified directory
-   * @param {string} dir Path to a directory to clean up
-   */
-  static cleanupFiles(dir) {
+  //Clean up the archive folder in the specified directory
+  public static cleanupFiles(dir: string): void {
     try {
       const folder = path.join(dir, 'archive');
       emptyDirSync(folder);
-    } catch (err) {
-      throw new Error(err);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(error.message);
+      }
     }
   }
 
-  /**
-   * Take an archive containing gerber files, config object, temporary dir
-   * and output dir and create a PNG image from the gerber in the output dir
-   * @param {string} gerber Path to an archive file containing gerber
-   * @returns {Promise.<string>} Promise to return path to image
-   */
-  gerberToImage(gerber) {
+  //  * Take an archive containing gerber files, config object, temporary dir
+  //  * and output dir and create a PNG image from the gerber in the output dir
+  //  * @param {string} gerber Path to an archive file containing gerber
+  //  * @returns {Promise.<string>} Promise to return path to image
+
+  public gerberToImage(gerber: string) {
     // Create output dir if it doesn't exist
     try {
-      // fs.ensureDirSync(this.imgDir, 0o644);
-      ensureDirSync(this.imgDir);
-    } catch (e) {
-      throw new Error(e);
+      ensureDirSync(this.folderConfig.imgDir);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(error.message);
+      }
     }
 
     // Check temp and output dirs exist
@@ -154,24 +160,30 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
       if (!existsSync(gerber)) {
         throw Error('Archive does not exist.');
       }
-      if (!existsSync(this.tmpDir)) {
+      if (!existsSync(this.folderConfig.tmpDir)) {
         throw Error('Temporary folder does not exist.');
       }
-      if (!existsSync(this.imgDir)) {
+      if (!existsSync(this.folderConfig.imgDir)) {
         throw Error('Output folder does not exist.');
       }
-    } catch (e) {
-      throw new Error(e);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(error.message);
+      }
     }
 
     // Set filenames
+    //Use the filename of the gerber zip to determine the output png filename
     const imageName = path.basename(gerber, '.zip');
-    const destFile = `${path.join(this.imgDir, imageName)}.png`;
+    const destFile = `${path.join(this.folderConfig.imgDir, imageName)}.png`;
 
     return new Promise((resolve, reject) => {
-      ImageGenerator.extractArchive(gerber, this.tmpDir);
-      ImageGenerator.getLayers(
-        path.join(this.tmpDir, 'archive'),
+      if (!this.layerNames) {
+        throw new Error('You must supply an array of layer names.');
+      }
+      this.extractArchive(gerber, this.folderConfig.tmpDir);
+      this.getLayers(
+        path.join(this.folderConfig.tmpDir, 'archive'),
         this.layerNames,
       )
         .then(pcbStackup)
@@ -184,11 +196,11 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
             .toFile(destFile);
         })
         .then(() => {
-          ImageGenerator.cleanupFiles(this.tmpDir);
+          ImageGenerator.cleanupFiles(this.folderConfig.tmpDir);
           resolve(destFile);
         })
         .catch((e) => {
-          ImageGenerator.cleanupFiles(this.tmpDir);
+          ImageGenerator.cleanupFiles(this.folderConfig.tmpDir);
           reject(new Error(e));
         });
     });
@@ -200,27 +212,29 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
    * @param {string} gerber Path to an archive file containing gerber
    * @returns {Promise.<stream.Readable>} Promise that resolves to a PNG stream
    */
-  gerberToStream(gerber) {
+  gerberToStream(gerber: string) {
     // Check temp and output dirs exist
     try {
       if (!existsSync(gerber)) {
         throw Error('Archive does not exist.');
       }
-      if (!existsSync(this.tmpDir)) {
+      if (!existsSync(this.folderConfig.tmpDir)) {
         throw Error('Temporary folder does not exist.');
       }
-      if (!existsSync(this.imgDir)) {
+      if (!existsSync(this.folderConfig.imgDir)) {
         throw Error('Output folder does not exist.');
       }
-    } catch (e) {
-      throw new Error(e);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(error.message);
+      }
     }
 
     return new Promise((resolve, reject) => {
-      ImageGenerator.extractArchive(gerber, this.tmpDir);
-      ImageGenerator.getLayers(
-        path.join(this.tmpDir, 'archive'),
-        this.layerNames,
+      this.extractArchive(gerber, this.folderConfig.tmpDir);
+      this.getLayers(
+        path.join(this.folderConfig.tmpDir, 'archive'),
+        this.layerNames!,
       )
         .then(pcbStackup)
         .then((stackup) => {
@@ -231,7 +245,7 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
             .png({ compressionLevel: this.imgConfig.compLevel })
             .toBuffer()
             .then((buffer) => {
-              ImageGenerator.cleanupFiles(this.tmpDir);
+              ImageGenerator.cleanupFiles(this.folderConfig.tmpDir);
               const stream = new Readable();
               stream.push(buffer);
               stream.push(null);
@@ -239,7 +253,7 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
             });
         })
         .catch((e) => {
-          ImageGenerator.cleanupFiles(this.tmpDir);
+          ImageGenerator.cleanupFiles(this.folderConfig.tmpDir);
           reject(new Error(e));
         });
     });

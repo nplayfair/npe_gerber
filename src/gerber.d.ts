@@ -19,5 +19,5 @@ interface Layers {
 }
 
 interface LayerGenerator {
-  getLayers(dir: string, layerNames: string[]): Layers[];
+  getLayers(dir: string, layerNames: string[]): Promise<Layers[]>;
 }
