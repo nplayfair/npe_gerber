@@ -45,10 +45,7 @@ class ImageGenerator {
         zip.extractAllTo(path_1.default.join(tmpDir, 'archive'));
         return zip.getEntries().length;
     }
-    /**
-     * Temporary test method zip file
-  
-     */
+    //Test archive
     testArchive(fileName, tmpDir) {
         // Check archive exists
         try {
@@ -127,9 +124,6 @@ class ImageGenerator {
         if (!(0, node_fs_1.existsSync)(this.folderConfig.imgDir)) {
             throw Error('Output folder does not exist.');
         }
-        else {
-            console.error(`output dir: ${this.folderConfig.imgDir}`);
-        }
         // Set filenames
         //Use the filename of the gerber zip to determine the output png filename
         const imageName = path_1.default.basename(gerber, '.zip');
@@ -161,10 +155,7 @@ class ImageGenerator {
     }
     /**
      * Take an archive containing gerber files and return a stream containing
-     * a PNG image from the gerber
-     * @param {string} gerber Path to an archive file containing gerber
-     * @returns {Promise.<stream.Readable>} Promise that resolves to a PNG stream
-     */
+     * a PNG image from the gerber */
     gerberToStream(gerber) {
         // Check temp and output dirs exist
         if (!(0, node_fs_1.existsSync)(gerber)) {
