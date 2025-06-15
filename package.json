@@ -25,7 +25,6 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "fs-extra": "^11.3.0",
-    "jszip": "^3.10.1",
     "pcb-stackup": "^4.2.8",
     "sharp": "^0.34.2"
   },

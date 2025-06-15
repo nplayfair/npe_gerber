@@ -6,8 +6,6 @@ import path from 'path';
 import pcbStackup from 'pcb-stackup';
 import sharp from 'sharp';
 import { Readable } from 'node:stream';
-// import { folder } from 'jszip';
-// const { Buffer } = require('node:buffer');
 import { existsSync, accessSync, createReadStream, constants } from 'node:fs';
 
 //Class definition
@@ -17,11 +15,6 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
     public imgConfig: ImageConfig,
     public layerNames?: string[],
   ) {
-    // this.tmpDir = folderConfig.tmpDir;
-    // this.imgDir = folderConfig.imgDir;
-    // this.imgConfig = imgConfig;
-    // this.layerNames = layerNames;
-
     //Ensure folders exist
     if (!existsSync(folderConfig.tmpDir))
       throw new Error('Temp dir does not exist');
@@ -160,7 +153,7 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
       )
         .then(pcbStackup)
         .then((stackup) => {
-          sharp(Buffer.from(stackup.top.svg), {
+          sharp(Buffer.from(stackup.top.svg as ArrayLike<number>), {
             density: this.imgConfig.density,
           })
             .resize({ width: this.imgConfig.resizeWidth })
@@ -204,13 +197,14 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
 
     return new Promise((resolve, reject) => {
       this.extractArchive(gerber, this.folderConfig.tmpDir);
+      if (!this.layerNames) throw new Error('No layers provided');
       this.getLayers(
         path.join(this.folderConfig.tmpDir, 'archive'),
-        this.layerNames!,
+        this.layerNames,
       )
         .then(pcbStackup)
         .then((stackup) => {
-          sharp(Buffer.from(stackup.top.svg), {
+          sharp(Buffer.from(stackup.top.svg as ArrayLike<number>), {
             density: this.imgConfig.density,
           })
             .resize({ width: this.imgConfig.resizeWidth })
