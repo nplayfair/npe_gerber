@@ -9,7 +9,7 @@ import { Readable } from 'node:stream';
 import { existsSync, accessSync, createReadStream, constants } from 'node:fs';
 
 //Class definition
-class ImageGenerator implements ZipExtractor, LayerGenerator {
+export class ImageGenerator implements ZipExtractor, LayerGenerator {
   constructor(
     public folderConfig: FolderConfig,
     public imgConfig: ImageConfig,
@@ -121,20 +121,14 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
     }
 
     // Check temp and output dirs exist
-    try {
-      if (!existsSync(gerber)) {
-        throw Error('Archive does not exist.');
-      }
-      if (!existsSync(this.folderConfig.tmpDir)) {
-        throw Error('Temporary folder does not exist.');
-      }
-      if (!existsSync(this.folderConfig.imgDir)) {
-        throw Error('Output folder does not exist.');
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(error.message);
-      }
+    if (!existsSync(gerber)) {
+      throw Error('Archive does not exist.');
+    }
+    if (!existsSync(this.folderConfig.tmpDir)) {
+      throw Error('Temporary folder does not exist.');
+    }
+    if (!existsSync(this.folderConfig.imgDir)) {
+      throw Error('Output folder does not exist.');
     }
 
     // Set filenames
@@ -179,20 +173,14 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
    */
   gerberToStream(gerber: string) {
     // Check temp and output dirs exist
-    try {
-      if (!existsSync(gerber)) {
-        throw Error('Archive does not exist.');
-      }
-      if (!existsSync(this.folderConfig.tmpDir)) {
-        throw Error('Temporary folder does not exist.');
-      }
-      if (!existsSync(this.folderConfig.imgDir)) {
-        throw Error('Output folder does not exist.');
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(error.message);
-      }
+    if (!existsSync(gerber)) {
+      throw Error('Archive does not exist.');
+    }
+    if (!existsSync(this.folderConfig.tmpDir)) {
+      throw Error('Temporary folder does not exist.');
+    }
+    if (!existsSync(this.folderConfig.imgDir)) {
+      throw Error('Output folder does not exist.');
     }
 
     return new Promise((resolve, reject) => {
@@ -225,7 +213,3 @@ class ImageGenerator implements ZipExtractor, LayerGenerator {
     });
   }
 }
-
-module.exports = {
-  ImageGenerator,
-};

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ImageGenerator = void 0;
 //Modules
 // const AdmZip = require('adm-zip');
 const adm_zip_1 = __importDefault(require("adm-zip"));
@@ -117,21 +118,17 @@ class ImageGenerator {
             }
         }
         // Check temp and output dirs exist
-        try {
-            if (!(0, node_fs_1.existsSync)(gerber)) {
-                throw Error('Archive does not exist.');
-            }
-            if (!(0, node_fs_1.existsSync)(this.folderConfig.tmpDir)) {
-                throw Error('Temporary folder does not exist.');
-            }
-            if (!(0, node_fs_1.existsSync)(this.folderConfig.imgDir)) {
-                throw Error('Output folder does not exist.');
-            }
+        if (!(0, node_fs_1.existsSync)(gerber)) {
+            throw Error('Archive does not exist.');
         }
-        catch (error) {
-            if (error instanceof Error) {
-                console.error(error.message);
-            }
+        if (!(0, node_fs_1.existsSync)(this.folderConfig.tmpDir)) {
+            throw Error('Temporary folder does not exist.');
+        }
+        if (!(0, node_fs_1.existsSync)(this.folderConfig.imgDir)) {
+            throw Error('Output folder does not exist.');
+        }
+        else {
+            console.error(`output dir: ${this.folderConfig.imgDir}`);
         }
         // Set filenames
         //Use the filename of the gerber zip to determine the output png filename
@@ -170,21 +167,14 @@ class ImageGenerator {
      */
     gerberToStream(gerber) {
         // Check temp and output dirs exist
-        try {
-            if (!(0, node_fs_1.existsSync)(gerber)) {
-                throw Error('Archive does not exist.');
-            }
-            if (!(0, node_fs_1.existsSync)(this.folderConfig.tmpDir)) {
-                throw Error('Temporary folder does not exist.');
-            }
-            if (!(0, node_fs_1.existsSync)(this.folderConfig.imgDir)) {
-                throw Error('Output folder does not exist.');
-            }
+        if (!(0, node_fs_1.existsSync)(gerber)) {
+            throw Error('Archive does not exist.');
         }
-        catch (error) {
-            if (error instanceof Error) {
-                console.error(error.message);
-            }
+        if (!(0, node_fs_1.existsSync)(this.folderConfig.tmpDir)) {
+            throw Error('Temporary folder does not exist.');
+        }
+        if (!(0, node_fs_1.existsSync)(this.folderConfig.imgDir)) {
+            throw Error('Output folder does not exist.');
         }
         return new Promise((resolve, reject) => {
             this.extractArchive(gerber, this.folderConfig.tmpDir);
@@ -214,6 +204,4 @@ class ImageGenerator {
         });
     }
 }
-module.exports = {
-    ImageGenerator,
-};
+exports.ImageGenerator = ImageGenerator;
