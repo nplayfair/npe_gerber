@@ -47,10 +47,7 @@ export class ImageGenerator implements ZipExtractor, LayerGenerator {
     return zip.getEntries().length;
   }
 
-  /**
-   * Temporary test method zip file
-
-   */
+  //Test archive
   public testArchive(fileName: string, tmpDir: string): number {
     // Check archive exists
     try {
@@ -167,10 +164,8 @@ export class ImageGenerator implements ZipExtractor, LayerGenerator {
 
   /**
    * Take an archive containing gerber files and return a stream containing
-   * a PNG image from the gerber
-   * @param {string} gerber Path to an archive file containing gerber
-   * @returns {Promise.<stream.Readable>} Promise that resolves to a PNG stream
-   */
+   * a PNG image from the gerber */
+
   gerberToStream(gerber: string) {
     // Check temp and output dirs exist
     if (!existsSync(gerber)) {
