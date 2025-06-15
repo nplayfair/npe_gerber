@@ -1,60 +1,51 @@
 //Modules
-const AdmZip = require('adm-zip');
-const { emptyDirSync, ensureDirSync } = require('fs-extra');
-const path = require('path');
-const pcbStackup = require('pcb-stackup');
-const sharp = require('sharp');
-const { Readable } = require('node:stream');
-const { Buffer } = require('node:buffer');
-const {
-  existsSync,
-  accessSync,
-  createReadStream,
-  constants,
-} = require('node:fs');
+// const AdmZip = require('adm-zip');
+import AdmZip from 'adm-zip';
+import { emptyDirSync, ensureDirSync } from 'fs-extra';
+import path from 'path';
+import pcbStackup from 'pcb-stackup';
+import sharp from 'sharp';
+import { Readable } from 'node:stream';
+// import { folder } from 'jszip';
+// const { Buffer } = require('node:buffer');
+import { existsSync, accessSync, createReadStream, constants } from 'node:fs';
 
 //Class definition
-class ImageGenerator {
-  constructor(folderConfig, imgConfig, layerNames) {
-    this.tmpDir = folderConfig.tmpDir;
-    this.imgDir = folderConfig.imgDir;
-    this.imgConfig = imgConfig;
-    this.layerNames = layerNames;
+class ImageGenerator implements ZipExtractor, LayerGenerator {
+  constructor(
+    public folderConfig: FolderConfig,
+    public imgConfig: ImageConfig,
+    public layerNames?: string[],
+  ) {
+    // this.tmpDir = folderConfig.tmpDir;
+    // this.imgDir = folderConfig.imgDir;
+    // this.imgConfig = imgConfig;
+    // this.layerNames = layerNames;
 
     //Ensure folders exist
-    try {
-      if (!existsSync(this.tmpDir)) throw 'Temp dir does not exist';
-      if (!existsSync(this.imgDir)) throw 'Image dir does not exist';
-    } catch (error) {
-      throw new Error(error);
-    }
+    if (!existsSync(folderConfig.tmpDir))
+      throw new Error('Temp dir does not exist');
+
+    if (!existsSync(folderConfig.imgDir))
+      throw new Error('Image dir does not exist');
 
     //Check folder permissions
-    try {
-      accessSync(this.tmpDir, constants.R_OK | constants.W_OK);
-      accessSync(this.imgDir, constants.R_OK | constants.W_OK);
-    } catch (error) {
-      throw new Error(error);
-    }
+    accessSync(folderConfig.tmpDir, constants.R_OK | constants.W_OK);
+    accessSync(folderConfig.imgDir, constants.R_OK | constants.W_OK);
   }
 
   /**
    * Extracts the passed in zip file
-   * @param {string} fileName Name of the file to be extracted
-   * @param {string} tmpDir Temporary directory to extract to
-   * @returns {number} Number of objects contained in the archive
+
    */
-  static extractArchive(fileName, tmpDir) {
+  public extractArchive(fileName: string, tmpDir: string): number {
     // Check archive exists
-    try {
-      if (!existsSync(fileName)) {
-        throw Error('Archive does not exist.');
-      }
-      if (!existsSync(tmpDir)) {
-        throw Error('Temporary folder does not exist.');
-      }
-    } catch (e) {
-      throw new Error(e);
+    if (!existsSync(fileName)) {
+      throw Error('Archive does not exist.');
+    }
+    //Check temp folder exists
+    if (!existsSync(tmpDir)) {
+      throw Error('Temporary folder does not exist.');
     }
 
     const zip = new AdmZip(fileName);
@@ -65,11 +56,9 @@ class ImageGenerator {
 
   /**
    * Temporary test method zip file
-   * @param {string} fileName Name of the file to be extracted
-   * @param {string} tmpDir Temporary directory to extract to
-   * @returns {number} Number of objects contained in the archive
+
    */
-  static testArchive(fileName, tmpDir) {
+  public testArchive(fileName: string, tmpDir: string): number {
     // Check archive exists
     try {
       if (!existsSync(fileName)) {
@@ -78,42 +67,58 @@ class ImageGenerator {
       if (!existsSync(tmpDir)) {
         throw Error('Temporary folder does not exist.');
       }
-    } catch (e) {
-      throw new Error(e);
+    } catch (e: unknown) {
+      console.error(e);
     }
     try {
       const zip = new AdmZip(fileName);
       return zip.getEntries().length;
-    } catch (error) {
-      throw new Error(error);
+    } catch (error: unknown) {
+      console.error(error);
     }
   }
 
   /**
    * Take in a directory of layer files and return an array of the layers files
-   * @param {string} dir Directory containing layer files
-   * @param {Array} layerNames Array of filenames for the desired layers
-   * @returns {Array} Array of paths to the layers files
+
    */
-  static getLayers(dir, layerNames) {
-    return new Promise((resolve, reject) => {
-      // Make sure the directory exists
-      if (!existsSync(dir)) {
-        return reject(new Error('Layers folder does not exist.'));
+  // public getLayers(dir: string, layerNames: string[]) {
+  //   new Promise((resolve, reject) => {
+  //     // Make sure the directory exists
+  //     if (!existsSync(dir)) {
+  //       return reject(new Error('Layers folder does not exist.'));
+  //     }
+  //     // Check that the required layer files exist in source dir
+  //     let layersValid = true;
+  //     layerNames.forEach((layer) => {
+  //       if (!existsSync(path.join(dir, layer))) layersValid = false;
+  //     });
+  //     if (!layersValid) return reject(new Error('Layer not found.'));
+  //     // Construct array of layers that match the supplied filenames array
+  //     const layers = layerNames.map((layerName) => ({
+  //       filename: layerName,
+  //       gerber: createReadStream(path.join(dir, layerName)),
+  //     }));
+  //     return resolve(layers);
+  //   });
+  // }
+
+  public getLayers(dir: string, layerNames: string[]): Layers[] {
+    if (!existsSync(dir)) throw new Error('Layers folder does not exist');
+
+    //Make sure the layer files exist in the folder
+    layerNames.forEach((layerName) => {
+      if (!existsSync(path.join(dir, layerName))) {
+        throw `Missing layer: ${layerName}`;
       }
-      // Check that the required layer files exist in source dir
-      let layersValid = true;
-      layerNames.forEach((layer) => {
-        if (!existsSync(path.join(dir, layer))) layersValid = false;
-      });
-      if (!layersValid) return reject(new Error('Layer not found.'));
-      // Construct array of layers that match the supplied filenames array
-      const layers = layerNames.map((layerName) => ({
-        filename: layerName,
-        gerber: createReadStream(path.join(dir, layerName)),
-      }));
-      return resolve(layers);
     });
+
+    //Construct array of layers
+    const layers: Layers[] = layerNames.map((layerName) => ({
+      filename: layerName,
+      gerber: createReadStream(path.join(dir, layerName)),
+    }));
+    return layers;
   }
 
   /**

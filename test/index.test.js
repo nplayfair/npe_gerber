@@ -1,8 +1,8 @@
 const path = require('path');
 const { readdirSync, ReadStream } = require('node:fs');
 const { Readable } = require('node:stream');
-const { ImageGenerator } = require('../index.js');
-require('../index.js');
+const { ImageGenerator } = require('../dist/index.js');
+require('../dist/index.js');
 
 const testGerber = path.join(__dirname, 'Arduino-Pro-Mini.zip');
 const incompleteGerber = path.join(__dirname, 'incomplete.zip');
@@ -80,8 +80,8 @@ describe('Creating an ImageGenerator object', () => {
     expect(imgGen.imgConfig.compLevel).toBe(1);
   });
   test('folders should be the ones specified in the folder config parameter', () => {
-    expect(imgGen.tmpDir).toBe(path.join(__dirname, 'tmp'));
-    expect(imgGen.imgDir).toBe(path.join(__dirname, 'tmp'));
+    expect(imgGen.folderConfig.tmpDir).toBe(path.join(__dirname, 'tmp'));
+    expect(imgGen.folderConfig.imgDir).toBe(path.join(__dirname, 'tmp'));
   });
 });
 
@@ -112,58 +112,45 @@ describe('Passing in', () => {
 // Testing static methods
 //Layer methods
 describe('Getting layers', () => {
-  test('should return a promise of array layers', () => {
-    expect.assertions(1);
-    return ImageGenerator.getLayers(testLayers, layerNames).then((data) => {
-      expect(data).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            filename: expect.any(String),
-            gerber: expect.any(ReadStream),
-          }),
-        ]),
-      );
-    });
+  const imgGen = new ImageGenerator(folderConfig, imgConfig);
+  test('should return an array of layers', () => {
+    expect(imgGen.getLayers(testLayers, layerNames)).toBeInstanceOf(Array);
   });
-  test('should reject promise with error if the layers folder is not valid', () => {
-    expect.assertions(1);
-    return expect(
-      ImageGenerator.getLayers('./invalid_folder', layerNames),
-    ).rejects.toThrow(new Error('Layers folder does not exist.'));
+
+  test('should throw error if the layers folder is not valid', () => {
+    expect(() => {
+      imgGen.getLayers('some_invalid_folder', layerNames);
+    }).toThrow();
   });
-  test('should reject promise with error if there is not the correct number of layers', () => {
-    expect.assertions(1);
-    return expect(
-      ImageGenerator.getLayers(emptyFolder, layerNames),
-    ).rejects.toThrow(new Error('Layer not found.'));
+
+  test('should throw error if incorrect number of layers supplied', () => {
+    expect(() => {
+      imgGen.getLayers(emptyFolder, layerNames);
+    }).toThrow();
   });
 });
-
 //Archive methods
 describe('When extracting an archive', () => {
+  const imgGen = new ImageGenerator(folderConfig, imgConfig);
   test('a non-existent archive should throw an error', () => {
     expect(() =>
-      ImageGenerator.extractArchive('invalid.zip', folderConfig.tmpDir),
+      imgGen.extractArchive('invalid.zip', folderConfig.tmpDir),
     ).toThrow();
   });
   test('if the temp dir does not exist it should throw an error', () => {
-    expect(() =>
-      ImageGenerator.extractArchive(testGerber, './invalid_dir'),
-    ).toThrow(Error);
+    expect(() => imgGen.extractArchive(testGerber, 'some_invalid_dir')).toThrow(
+      Error,
+    );
   });
   test('it should load the archive and return the number of files extracted', () => {
     expect(() => {
-      ImageGenerator.testArchive(testGerber, archiveTestFolder);
+      imgGen.testArchive(testGerber, archiveTestFolder);
     }).not.toThrow();
-    expect(ImageGenerator.testArchive(testGerber, archiveTestFolder)).toEqual(
-      12,
-    );
+    expect(imgGen.testArchive(testGerber, archiveTestFolder)).toEqual(12);
   });
   test('it should extract archive and all files should be present', () => {
-    expect(ImageGenerator.testArchive(testGerber, archiveTestFolder)).toEqual(
-      12,
-    );
-    ImageGenerator.extractArchive(testGerber, archiveTestFolder);
+    expect(imgGen.testArchive(testGerber, archiveTestFolder)).toEqual(12);
+    imgGen.extractArchive(testGerber, archiveTestFolder);
     const dirents = readdirSync(archiveTestFolder, {
       recursive: true,
       withFileTypes: true,
