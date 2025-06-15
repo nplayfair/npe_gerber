@@ -1,6 +1,6 @@
 //Modules
 const AdmZip = require('adm-zip');
-const { emptyDirSync } = require('fs-extra');
+const { emptyDirSync, ensureDirSync } = require('fs-extra');
 const path = require('path');
 const pcbStackup = require('pcb-stackup');
 const sharp = require('sharp');
@@ -10,18 +10,8 @@ const {
   existsSync,
   accessSync,
   createReadStream,
-  mkdirSync,
-  chmodSync,
   constants,
 } = require('node:fs');
-
-//ensureDirSync method
-function ensureDirSync(directory) {
-  if (!existsSync(directory)) {
-    mkdirSync(directory, { recursive: true });
-    chmodSync(directory, 0o644);
-  }
-}
 
 //Class definition
 class ImageGenerator {
