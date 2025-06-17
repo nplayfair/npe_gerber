@@ -97,4 +97,4 @@ typings/
 gerber/
 hello.txt
 test/tmp/*
-test/archiveTest
+test/arduino/*
