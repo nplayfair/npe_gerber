@@ -1,5 +1,4 @@
 //Modules
-// const AdmZip = require('adm-zip');
 import AdmZip from 'adm-zip';
 import { emptyDirSync, ensureDirSync } from 'fs-extra';
 import path from 'path';
