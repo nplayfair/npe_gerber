@@ -93,6 +93,9 @@ describe('Creating an ImageGenerator object', () => {
 
 //Test invalid folder configs
 describe('Attempting to create ImageGenerator object with', () => {
+  afterAll(() => {
+    return emptyDirSync(path.join(__dirname, 'tmp'));
+  });
   test('non-existent temp folder should throw error', () => {
     expect(() => {
       const badGen = new ImageGenerator(tmpNotExist, imgConfig, layerNames);
@@ -120,8 +123,8 @@ describe('Create image from Arduino gerber', () => {
   beforeAll(() => {
     return emptyDirSync(path.join(__dirname, 'arduino'));
   });
-  afterEach(() => {
-    return emptyDirSync(path.join(__dirname, 'tmp'));
+  beforeEach(() => {
+    return emptyDirSync(folderConfig.tmpDir);
   });
   const arduinoGen = new ImageGenerator(arduinoConfig, imgConfig, layerNames);
   test('should create a valid object when passed the correct files and configuration', () => {
@@ -143,6 +146,9 @@ describe('Create image from Arduino gerber', () => {
     ).resolves.toBeInstanceOf(Readable);
   });
   test('incomplete archive file should throw an error', () => {
-    expect(() => arduinoGen.gerberToImage(incompleteGerber)).toThrow();
+    expect.assertions(1);
+    return expect(arduinoGen.gerberToImage(incompleteGerber)).rejects.toContain(
+      'Missing',
+    );
   });
 });

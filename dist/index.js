@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImageGenerator = void 0;
 //Modules
-// const AdmZip = require('adm-zip');
 const adm_zip_1 = __importDefault(require("adm-zip"));
 const fs_extra_1 = require("fs-extra");
 const path_1 = __importDefault(require("path"));
@@ -20,47 +19,10 @@ class ImageGenerator {
         this.imgConfig = imgConfig;
         this.layerNames = layerNames;
         //Ensure folders exist
-        if (!(0, node_fs_1.existsSync)(folderConfig.tmpDir))
-            throw new Error('Temp dir does not exist');
-        if (!(0, node_fs_1.existsSync)(folderConfig.imgDir))
-            throw new Error('Image dir does not exist');
-        //Check folder permissions
-        (0, node_fs_1.accessSync)(folderConfig.tmpDir, node_fs_1.constants.R_OK | node_fs_1.constants.W_OK);
-        (0, node_fs_1.accessSync)(folderConfig.imgDir, node_fs_1.constants.R_OK | node_fs_1.constants.W_OK);
-    }
-    /**
-     * Extracts the passed in zip file
-  
-     */
-    extractArchive(fileName, tmpDir) {
-        // Check archive exists
-        if (!(0, node_fs_1.existsSync)(fileName)) {
-            throw Error('Archive does not exist.');
-        }
-        //Check temp folder exists
-        if (!(0, node_fs_1.existsSync)(tmpDir)) {
-            throw Error('Temporary folder does not exist.');
-        }
-        const zip = new adm_zip_1.default(fileName);
-        zip.extractAllTo(path_1.default.join(tmpDir, 'archive'));
-        return zip.getEntries().length;
-    }
-    //Test archive
-    testArchive(fileName, tmpDir) {
-        // Check archive exists
-        try {
-            if (!(0, node_fs_1.existsSync)(fileName)) {
-                throw Error('Archive does not exist.');
-            }
-            if (!(0, node_fs_1.existsSync)(tmpDir)) {
-                throw Error('Temporary folder does not exist.');
-            }
-        }
-        catch (e) {
-            console.error(e);
-        }
-        const zip = new adm_zip_1.default(fileName);
-        return zip.getEntries().length;
+        if (!validFolder(folderConfig.tmpDir, true))
+            throw new Error('Temp directory is invalid');
+        if (!validFolder(folderConfig.imgDir, true))
+            throw new Error('Image directory is invalid');
     }
     //Layer promise
     getLayers(dir, layerNames) {
@@ -132,7 +94,8 @@ class ImageGenerator {
             if (!this.layerNames) {
                 throw new Error('You must supply an array of layer names.');
             }
-            this.extractArchive(gerber, this.folderConfig.tmpDir);
+            //Extract the passed in zip file
+            extractArchive(gerber, this.folderConfig.tmpDir);
             this.getLayers(path_1.default.join(this.folderConfig.tmpDir, 'archive'), this.layerNames)
                 .then(pcb_stackup_1.default)
                 .then((stackup) => {
@@ -168,7 +131,7 @@ class ImageGenerator {
             throw Error('Output folder does not exist.');
         }
         return new Promise((resolve, reject) => {
-            this.extractArchive(gerber, this.folderConfig.tmpDir);
+            extractArchive(gerber, this.folderConfig.tmpDir);
             if (!this.layerNames)
                 throw new Error('No layers provided');
             this.getLayers(path_1.default.join(this.folderConfig.tmpDir, 'archive'), this.layerNames)
@@ -196,3 +159,38 @@ class ImageGenerator {
     }
 }
 exports.ImageGenerator = ImageGenerator;
+//File methods
+//Check that a folder exists and is writeable
+function validFolder(dir, checkPerms) {
+    if (!(0, node_fs_1.existsSync)(dir)) {
+        throw Error('Folder does not exist.');
+    }
+    //Check folder permissions, will throw error if not readable or writeable
+    if (checkPerms) {
+        (0, node_fs_1.accessSync)(dir, node_fs_1.constants.R_OK | node_fs_1.constants.W_OK);
+        (0, node_fs_1.accessSync)(dir, node_fs_1.constants.R_OK | node_fs_1.constants.W_OK);
+    }
+    //All checks passed
+    return true;
+}
+function extractArchive(fileName, outputDir) {
+    //Check archive exists
+    if (!(0, node_fs_1.existsSync)(fileName)) {
+        throw Error('Archive does not exist.');
+    }
+    //Check output dir is valid
+    if (!validFolder(outputDir, true))
+        throw new Error('Output directory is not valid');
+    //Attempt to extract archive
+    const zip = new adm_zip_1.default(fileName);
+    try {
+        zip.extractAllTo(path_1.default.join(outputDir, 'archive'));
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            console.error(error.message);
+            return 0;
+        }
+    }
+    return zip.getEntries().length;
+}

@@ -5,126 +5,38 @@ import path from 'path';
 import pcbStackup from 'pcb-stackup';
 import sharp from 'sharp';
 import { Readable } from 'node:stream';
-import { existsSync, accessSync, createReadStream, constants } from 'node:fs';
+import { existsSync, createReadStream, accessSync, constants } from 'node:fs';
 
 //Class definition
-export class ImageGenerator implements ZipExtractor, LayerGenerator {
+export class ImageGenerator {
   constructor(
     public folderConfig: FolderConfig,
     public imgConfig: ImageConfig,
-    public layerNames?: string[],
+    public layerNames: string[],
   ) {
     //Ensure folders exist
-    if (!existsSync(folderConfig.tmpDir))
-      throw new Error('Temp dir does not exist');
+    if (!this.validFolder(folderConfig.tmpDir, true))
+      throw new Error('Temp directory is invalid');
 
-    if (!existsSync(folderConfig.imgDir))
-      throw new Error('Image dir does not exist');
-
-    //Check folder permissions
-    accessSync(folderConfig.tmpDir, constants.R_OK | constants.W_OK);
-    accessSync(folderConfig.imgDir, constants.R_OK | constants.W_OK);
+    if (!this.validFolder(folderConfig.imgDir, true))
+      throw new Error('Image directory is invalid');
   }
 
-  /**
-   * Extracts the passed in zip file
-
-   */
-  public extractArchive(fileName: string, tmpDir: string): number {
-    // Check archive exists
-    if (!existsSync(fileName)) {
+  //Take an archive containing gerber files, config object, temporary dir
+  //and output dir and create a PNG image from the gerber in the output dir
+  public gerberToImage(gerber: string) {
+    //Check gerber archive exists
+    if (!existsSync(gerber)) {
       throw Error('Archive does not exist.');
     }
-    //Check temp folder exists
-    if (!existsSync(tmpDir)) {
-      throw Error('Temporary folder does not exist.');
-    }
 
-    const zip = new AdmZip(fileName);
-    zip.extractAllTo(path.join(tmpDir, 'archive'));
-
-    return zip.getEntries().length;
-  }
-
-  //Test archive
-  public testArchive(fileName: string, tmpDir: string): number {
-    // Check archive exists
-    try {
-      if (!existsSync(fileName)) {
-        throw Error('Archive does not exist.');
-      }
-      if (!existsSync(tmpDir)) {
-        throw Error('Temporary folder does not exist.');
-      }
-    } catch (e: unknown) {
-      console.error(e);
-    }
-    const zip = new AdmZip(fileName);
-    return zip.getEntries().length;
-  }
-
-  //Layer promise
-  public getLayers(dir: string, layerNames: string[]): Promise<Layers[]> {
-    //Check correct number of layers and folder exists
-    layerNames.forEach((layerName) => {
-      if (!existsSync(path.join(dir, layerName))) {
-        throw `Missing layer: ${layerName}`;
-      }
-    });
-    if (!existsSync(dir)) {
-      throw new Error('Folder not there');
-    }
-    //Return layer promise
-    const layersPromise = new Promise<Layers[]>(function (resolve, reject) {
-      const layers: Layers[] = layerNames.map((layerName: string) => ({
-        filename: layerName,
-        gerber: createReadStream(path.join(dir, layerName)),
-      }));
-      if (layers.length === layerNames.length) {
-        resolve(layers);
-      } else {
-        reject('Invalid layer count');
-      }
-    });
-    return layersPromise;
-  }
-
-  //Clean up the archive folder in the specified directory
-  public static cleanupFiles(dir: string): void {
-    try {
-      const folder = path.join(dir, 'archive');
-      emptyDirSync(folder);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(error.message);
-      }
-    }
-  }
-
-  //  * Take an archive containing gerber files, config object, temporary dir
-  //  * and output dir and create a PNG image from the gerber in the output dir
-  //  * @param {string} gerber Path to an archive file containing gerber
-  //  * @returns {Promise.<string>} Promise to return path to image
-
-  public gerberToImage(gerber: string) {
     // Create output dir if it doesn't exist
     try {
       ensureDirSync(this.folderConfig.imgDir);
     } catch (error) {
       if (error instanceof Error) {
-        console.error(error.message);
+        throw error;
       }
-    }
-
-    // Check temp and output dirs exist
-    if (!existsSync(gerber)) {
-      throw Error('Archive does not exist.');
-    }
-    if (!existsSync(this.folderConfig.tmpDir)) {
-      throw Error('Temporary folder does not exist.');
-    }
-    if (!existsSync(this.folderConfig.imgDir)) {
-      throw Error('Output folder does not exist.');
     }
 
     // Set filenames
@@ -134,9 +46,19 @@ export class ImageGenerator implements ZipExtractor, LayerGenerator {
 
     return new Promise((resolve, reject) => {
       if (!this.layerNames) {
-        throw new Error('You must supply an array of layer names.');
+        reject('You must supply an array of layer names.');
       }
+      //Extract the passed in zip file
       this.extractArchive(gerber, this.folderConfig.tmpDir);
+      //Check all layers present
+      this.layerNames.forEach((layerName) => {
+        if (
+          !existsSync(path.join(this.folderConfig.tmpDir, 'archive', layerName))
+        ) {
+          this.cleanupFiles(this.folderConfig.tmpDir);
+          reject(`Missing layer: ${layerName}`);
+        }
+      });
       this.getLayers(
         path.join(this.folderConfig.tmpDir, 'archive'),
         this.layerNames,
@@ -151,11 +73,11 @@ export class ImageGenerator implements ZipExtractor, LayerGenerator {
             .toFile(destFile);
         })
         .then(() => {
-          ImageGenerator.cleanupFiles(this.folderConfig.tmpDir);
+          this.cleanupFiles(this.folderConfig.tmpDir);
           resolve(destFile);
         })
         .catch((e) => {
-          ImageGenerator.cleanupFiles(this.folderConfig.tmpDir);
+          this.cleanupFiles(this.folderConfig.tmpDir);
           reject(new Error(e));
         });
     });
@@ -166,20 +88,23 @@ export class ImageGenerator implements ZipExtractor, LayerGenerator {
    * a PNG image from the gerber */
 
   gerberToStream(gerber: string) {
-    // Check temp and output dirs exist
+    // Check gerber archive exists
     if (!existsSync(gerber)) {
       throw Error('Archive does not exist.');
-    }
-    if (!existsSync(this.folderConfig.tmpDir)) {
-      throw Error('Temporary folder does not exist.');
-    }
-    if (!existsSync(this.folderConfig.imgDir)) {
-      throw Error('Output folder does not exist.');
     }
 
     return new Promise((resolve, reject) => {
       this.extractArchive(gerber, this.folderConfig.tmpDir);
       if (!this.layerNames) throw new Error('No layers provided');
+      //Check all layers present
+      this.layerNames.forEach((layerName) => {
+        if (
+          !existsSync(path.join(this.folderConfig.tmpDir, 'archive', layerName))
+        ) {
+          this.cleanupFiles(this.folderConfig.tmpDir);
+          reject(`Missing layer: ${layerName}`);
+        }
+      });
       this.getLayers(
         path.join(this.folderConfig.tmpDir, 'archive'),
         this.layerNames,
@@ -193,7 +118,7 @@ export class ImageGenerator implements ZipExtractor, LayerGenerator {
             .png({ compressionLevel: this.imgConfig.compLevel })
             .toBuffer()
             .then((buffer) => {
-              ImageGenerator.cleanupFiles(this.folderConfig.tmpDir);
+              this.cleanupFiles(this.folderConfig.tmpDir);
               const stream = new Readable();
               stream.push(buffer);
               stream.push(null);
@@ -201,9 +126,94 @@ export class ImageGenerator implements ZipExtractor, LayerGenerator {
             });
         })
         .catch((e) => {
-          ImageGenerator.cleanupFiles(this.folderConfig.tmpDir);
+          this.cleanupFiles(this.folderConfig.tmpDir);
           reject(new Error(e));
         });
     });
+  }
+
+  //Layer methods
+  //Returns promise that resolves to array of Layers
+  private getLayers(dir: string, layerNames: string[]): Promise<Layers[]> {
+    //Check correct number of layers and folder exists
+    // try {
+    //   layerNames.forEach((layerName) => {
+    //     if (!existsSync(path.join(dir, layerName))) {
+    //       this.cleanupFiles(dir);
+    //       throw new Error(`Missing layer: ${layerName}`);
+    //     }
+    //   });
+    // } catch (error: unknown) {
+    //   if (error instanceof Error) {
+    //     {
+    //       console.error(error.message);
+    //     }
+    //   }
+    // }
+
+    //Return layer promise
+    const layersPromise = new Promise<Layers[]>(function (resolve, reject) {
+      const layers: Layers[] = layerNames.map((layerName: string) => ({
+        filename: layerName,
+        gerber: createReadStream(path.join(dir, layerName)),
+      }));
+      if (layers.length === layerNames.length) {
+        resolve(layers);
+      } else {
+        reject(new Error('Invalid layer count'));
+      }
+    });
+    return layersPromise;
+  }
+
+  //File methods
+  //Check that a folder exists and is writeable
+  private validFolder(dir: string, checkPerms?: boolean): boolean {
+    if (!existsSync(dir)) {
+      throw Error('Folder does not exist.');
+    }
+    //Check folder permissions, will throw error if not readable or writeable
+    if (checkPerms) {
+      accessSync(dir, constants.R_OK | constants.W_OK);
+      accessSync(dir, constants.R_OK | constants.W_OK);
+    }
+
+    //All checks passed
+    return true;
+  }
+
+  private extractArchive(fileName: string, outputDir: string): number {
+    //Check archive exists
+    if (!existsSync(fileName)) {
+      throw Error('Archive does not exist.');
+    }
+
+    //Check output dir is valid
+    if (!this.validFolder(outputDir, true))
+      throw new Error('Output directory is not valid');
+
+    //Attempt to extract archive
+    const zip = new AdmZip(fileName);
+    try {
+      zip.extractAllTo(path.join(outputDir, 'archive'));
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(error.message);
+        return 0;
+      }
+    }
+    return zip.getEntries().length;
+  }
+
+  //Clean up the archive folder in the specified directory
+  private cleanupFiles(dir: string): void {
+    try {
+      const folder = path.join(dir, 'archive');
+      emptyDirSync(folder);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(error.message);
+      }
+    }
   }
 }
